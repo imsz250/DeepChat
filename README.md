@@ -2,6 +2,8 @@
 
 **中文** | [English](#english)
 
+GitHub：https://github.com/imsz250/DeepChat ｜ Gitee 镜像：https://gitee.com/imsb250/DeepChat
+
 ---
 
 ## 中文
@@ -51,6 +53,8 @@ API Key 只保存在本机应用私有目录，**不写进源码、不上传仓�
 ---
 
 ## English
+
+GitHub: https://github.com/imsz250/DeepChat ｜ Gitee mirror: https://gitee.com/imsb250/DeepChat
 
 A native Android third-party client for DeepSeek, built with Kotlin + Jetpack Compose + Material 3. Plug in your own DeepSeek API key and talk to the official API directly — no proxy, no relay.
 
