@@ -12,9 +12,9 @@ GitHub：https://github.com/imsz250/DeepChat ｜ Gitee 镜像：https://gitee.co
 
 ### 下载
 
-最新版：**[DeepChat 1.1.7 APK](https://github.com/imsz250/DeepChat/releases/latest)**
+最新版：**[DeepChat 1.1.8 APK](https://github.com/imsz250/DeepChat/releases/latest)**
 
-历史版本见 [Releases](https://github.com/imsz250/DeepChat/releases)（1.0.3 到 1.1.7 每个版本都带 APK）。release 包使用 debug 签名，同一签名可直接覆盖升级。
+历史版本见 [Releases](https://github.com/imsz250/DeepChat/releases)（1.0.3 到 1.1.8 每个版本都带 APK）。release 包使用 debug 签名，同一签名可直接覆盖升级。
 
 ### 功能
 
@@ -22,7 +22,7 @@ GitHub：https://github.com/imsz250/DeepChat ｜ Gitee 镜像：https://gitee.co
 - 多模型切换（deepseek-flash / deepseek-v4-pro / deepseek-chat / deepseek-reasoner），每个对话单独记录花费
 - Markdown 渲染：加粗、斜体、内联代码、标题、列表、引用、分割线、表格、代码块
 - 代码块：HTML / CSS / JS / SVG 可在本机 WebView 直接运行；其他语言只提供语法高亮查看、保存、复制
-- 附件：图片落盘持久化（重开仍有缩略图）；文本附件预览
+- 附件：气泡内直接渲染图片缩略图（点击看大图），图片落盘持久化；文本附件带内容预览
 - 联网搜索：Bing（手机端 / 桌面端）→ 百度依次兜底，搜不到自动退回普通回答
 - 三语界面：简体中文、繁體中文（中国香港 / 中国台湾）、English（美国 / 英国）
 - 深色 / 浅色 / 跟随系统；诊断日志；对话本地保存
@@ -60,9 +60,9 @@ A native Android third-party client for DeepSeek, built with Kotlin + Jetpack Co
 
 ### Download
 
-Latest: **[DeepChat 1.1.7 APK](https://github.com/imsz250/DeepChat/releases/latest)**
+Latest: **[DeepChat 1.1.8 APK](https://github.com/imsz250/DeepChat/releases/latest)**
 
-Older builds: [Releases](https://github.com/imsz250/DeepChat/releases) — every version from 1.0.3 to 1.1.7 ships an APK. Release builds are signed with the debug key, so they upgrade over each other directly.
+Older builds: [Releases](https://github.com/imsz250/DeepChat/releases) — every version from 1.0.3 to 1.1.8 ships an APK. Release builds are signed with the debug key, so they upgrade over each other directly.
 
 ### Features
 
@@ -70,7 +70,7 @@ Older builds: [Releases](https://github.com/imsz250/DeepChat/releases) — every
 - Model switching (deepseek-flash / deepseek-v4-pro / deepseek-chat / deepseek-reasoner) with per-conversation cost tracking
 - Markdown rendering: bold, italic, inline code, headings, lists, quotes, rules, tables, code blocks
 - Code blocks: HTML / CSS / JS / SVG run in a local WebView; every other language gets syntax-highlight view, save and copy only
-- Attachments: images copied into app storage (thumbnails survive restarts); text files with preview
+- Attachments: image thumbnails rendered inline in bubbles (tap to open full size), files copied into app storage so they survive restarts; text files with preview
 - Web search: Bing (mobile / desktop) then Baidu as fallbacks; falls back to a plain answer when nothing comes back
 - Three UI languages: Simplified Chinese, Traditional Chinese (Hong Kong / Taiwan), English (US / UK)
 - Dark / light / system theme; diagnostic log; local conversation storage

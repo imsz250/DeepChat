@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -67,6 +68,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import android.content.Intent
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -639,13 +642,73 @@ private fun MessageBubble(
         ) {
             Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
                 message.attachments.forEach { att ->
-                    Text(
-                        text = if (att.kind == "image") "🖼 ${att.name}"
-                        else "📄 ${att.name}（${att.chars} 字）",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = if (isUser) MaterialTheme.colorScheme.onPrimaryContainer
-                        else MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    if (att.kind == "image") {
+                        val bitmap = remember(att.name, att.path) {
+                            decodeBase64(att.imageBase64) ?: decodeFile(att.path)
+                        }
+                        Column(modifier = Modifier.padding(top = 4.dp)) {
+                            if (bitmap != null) {
+                                val ctx = LocalContext.current
+                                Image(
+                                    bitmap = bitmap.asImageBitmap(),
+                                    contentDescription = att.name,
+                                    contentScale = ContentScale.Fit,
+                                    modifier = Modifier
+                                        .widthIn(max = 240.dp)
+                                        .heightIn(min = 80.dp, max = 220.dp)
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .clickable {
+                                            runCatching {
+                                                val uri = FileProvider.getUriForFile(
+                                                    ctx, ctx.packageName + ".fileprovider", File(att.path ?: return@clickable)
+                                                )
+                                                ctx.startActivity(
+                                                    Intent(Intent.ACTION_VIEW).apply {
+                                                        setDataAndType(uri, "image/*")
+                                                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                                    }
+                                                )
+                                            }.onFailure {
+                                                Toast.makeText(ctx, "这张图打不开了", Toast.LENGTH_SHORT).show()
+                                            }
+                                        }
+                                )
+                                Text(
+                                    att.name,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = if (isUser) MaterialTheme.colorScheme.onPrimaryContainer
+                                    else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            } else {
+                                Text(
+                                    "🖼 " + att.name + "（图片已过期，重新发一次才能显示）",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = if (isUser) MaterialTheme.colorScheme.onPrimaryContainer
+                                    else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    } else {
+                        Column(modifier = Modifier.padding(top = 4.dp)) {
+                            Text(
+                                "📄 " + att.name + "（" + att.chars + " 字）",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = if (isUser) MaterialTheme.colorScheme.onPrimaryContainer
+                                else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            if (!att.text.isNullOrBlank()) {
+                                Text(
+                                    att.text.take(160),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = if (isUser) MaterialTheme.colorScheme.onPrimaryContainer
+                                    else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
                 }
                 if (message.attachments.isNotEmpty()) Spacer(Modifier.height(6.dp))
 
