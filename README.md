@@ -2,6 +2,12 @@
 
 一个纯原生 Android 的 DeepSeek 第三方客户端：Kotlin + Jetpack Compose + Material 3，填入自己的 DeepSeek API Key 后直连官方接口，不经过任何中转。
 
+## 下载
+
+最新版：**[DeepChat 1.1.7 APK](https://github.com/imsz250/DeepChat/releases/latest)**
+
+历史版本在 [Releases](https://github.com/imsz250/DeepChat/releases)（从 1.0.3 到 1.1.7 每个版本都带 APK）。release 包使用 debug 签名，同一签名可直接覆盖升级。
+
 ## 功能
 
 - 流式对话，边生成边跟随滚动；思考过程可折叠
