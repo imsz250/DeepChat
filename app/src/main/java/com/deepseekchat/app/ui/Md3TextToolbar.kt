@@ -121,13 +121,21 @@ fun Md3SelectionToolbar(state: Md3TextToolbarState, copyLabel: String, selectAll
                     },
                     enabled = state.onCopy != null
                 ) {
-                    Text(copyLabel, style = MaterialTheme.typography.labelLarge)
+                    Text(
+                        copyLabel,
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
                 }
                 TextButton(
                     onClick = { state.onSelectAll?.invoke() },
                     enabled = state.onSelectAll != null
                 ) {
-                    Text(selectAllLabel, style = MaterialTheme.typography.labelLarge)
+                    Text(
+                        selectAllLabel,
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
                 }
             }
         }
