@@ -124,6 +124,39 @@ fun ChatScreen(vm: ChatViewModel) {
         if (success) photoUri?.let { vm.addPhoto(it) }
     }
 
+    val voiceLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            val said = result.data
+                ?.getStringArrayListExtra(android.speech.RecognizerIntent.EXTRA_RESULTS)
+                ?.firstOrNull()
+                .orEmpty()
+            if (said.isNotBlank()) {
+                input = if (input.isBlank()) said else input + " " + said
+            } else {
+                vm.notify(L10n.t(language, "没听清，再说一次", "沒聽清，再說一次", "Didn't catch that"))
+            }
+        }
+    }
+
+    fun startVoice() {
+        val intent = Intent(android.speech.RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+            putExtra(
+                android.speech.RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                android.speech.RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
+            )
+            putExtra(
+                android.speech.RecognizerIntent.EXTRA_LANGUAGE,
+                if (language.startsWith("en")) "en-US" else "zh-CN"
+            )
+            putExtra(android.speech.RecognizerIntent.EXTRA_PROMPT, L10n.t(language, "说话，正在识别…", "說話，正在識別…", "Speak now…"))
+        }
+        runCatching { voiceLauncher.launch(intent) }.onFailure {
+            vm.notify(L10n.t(language, "这台设备没装语音识别服务", "這台設備沒裝語音識別服務", "No speech service on this device"))
+        }
+    }
+
     fun launchCamera() {
         runCatching {
             val file = File(context.cacheDir, "photo_${System.currentTimeMillis()}.jpg")
@@ -407,14 +440,25 @@ fun ChatScreen(vm: ChatViewModel) {
                     }
                 }
                 Spacer(Modifier.width(8.dp))
-                OutlinedTextField(
-                    value = input,
-                    onValueChange = { input = it },
-                    modifier = Modifier.weight(1f),
-                    placeholder = { Text(L10n.sendPlaceholder(language)) },
-                    maxLines = 5,
-                    shape = RoundedCornerShape(22.dp)
-                )
+                CompositionLocalProvider(LocalTextToolbar provides selToolbar) {
+                    OutlinedTextField(
+                        value = input,
+                        onValueChange = { input = it },
+                        modifier = Modifier.weight(1f),
+                        placeholder = { Text(L10n.sendPlaceholder(language)) },
+                        maxLines = 5,
+                        shape = RoundedCornerShape(22.dp),
+                        trailingIcon = {
+                            IconButton(onClick = { startVoice() }) {
+                                Icon(
+                                    AppIcons.Mic,
+                                    contentDescription = L10n.t(language, "语音输入", "語音輸入", "Voice input"),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    )
+                }
                 Spacer(Modifier.width(6.dp))
                 if (chat.sending) {
                     FilledIconButton(onClick = vm::stop) {
