@@ -2,41 +2,38 @@ package com.deepseekchat.app.data
 
 import android.content.Context
 import com.k2fsa.sherpa.onnx.FeatureConfig
-import com.k2fsa.sherpa.onnx.OnlineModelConfig
-import com.k2fsa.sherpa.onnx.OnlineRecognizer
-import com.k2fsa.sherpa.onnx.OnlineRecognizerConfig
-import com.k2fsa.sherpa.onnx.OnlineTransducerModelConfig
+import com.k2fsa.sherpa.onnx.OfflineModelConfig
+import com.k2fsa.sherpa.onnx.OfflineRecognizer
+import com.k2fsa.sherpa.onnx.OfflineRecognizerConfig
+import com.k2fsa.sherpa.onnx.OfflineSenseVoiceModelConfig
 
 /**
- * 离线语音识别：sherpa-onnx + 中英双语 streaming zipformer（k2-fsa 训练、国产开源引擎）。
- * 中英混说一条链路，不再出现「英文词被中文模型硬拆」的问题。
- * 模型随 APK 内置在 assets/asr 下，不联网、不收钱。
+ * 离线语音识别：sherpa-onnx + SenseVoiceSmall（阿里 FunAudioLLM 出品，中/英/日/韩/粤一体）。
+ * 这是目前开源里中文+英文混说识别最稳的一档，模型随 APK 内置，断网可用、不花钱。
  */
 object LocalAsr {
     @Volatile
-    private var recognizer: OnlineRecognizer? = null
+    private var recognizer: OfflineRecognizer? = null
 
-    private fun engine(ctx: Context): OnlineRecognizer? {
+    private fun engine(ctx: Context): OfflineRecognizer? {
         recognizer?.let { return it }
         return synchronized(this) {
             recognizer?.let { return it }
             runCatching {
-                val config = OnlineRecognizerConfig(
+                val config = OfflineRecognizerConfig(
                     featConfig = FeatureConfig(sampleRate = 16000, featureDim = 80),
-                    modelConfig = OnlineModelConfig(
-                        transducer = OnlineTransducerModelConfig(
-                            encoder = "asr/encoder.onnx",
-                            decoder = "asr/decoder.onnx",
-                            joiner = "asr/joiner.onnx"
+                    modelConfig = OfflineModelConfig(
+                        senseVoice = OfflineSenseVoiceModelConfig(
+                            model = "asr/model.onnx",
+                            language = "auto",
+                            useInverseTextNormalization = true
                         ),
                         tokens = "asr/tokens.txt",
                         numThreads = 2,
-                        modelType = "zipformer"
-                    ),
-                    decodingMethod = "greedy_search",
-                    enableEndpoint = false
+                        debug = false
+                    )
                 )
-                OnlineRecognizer(ctx.assets, config).also { recognizer = it }
+                OfflineRecognizer(ctx.assets, config).also { recognizer = it }
             }.getOrNull()
         }
     }
@@ -55,16 +52,8 @@ object LocalAsr {
             runCatching {
                 val stream = rec.createStream()
                 try {
-                    var i = 0
-                    val chunk = 8000 // 0.5s
-                    while (i < samples.size) {
-                        val n = minOf(chunk, samples.size - i)
-                        stream.acceptWaveform(samples.copyOfRange(i, i + n), 16000)
-                        while (rec.isReady(stream)) rec.decode(stream)
-                        i += n
-                    }
-                    stream.inputFinished()
-                    while (rec.isReady(stream)) rec.decode(stream)
+                    stream.acceptWaveform(samples, 16000)
+                    rec.decode(stream)
                     cleanUp(rec.getResult(stream).text)
                 } finally {
                     runCatching { stream.release() }

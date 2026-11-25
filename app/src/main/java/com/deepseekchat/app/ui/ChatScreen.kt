@@ -372,8 +372,8 @@ fun ChatScreen(vm: ChatViewModel) {
         }
     }
 
-    val selState = remember { Md3TextToolbarState() }
-    val selToolbar = remember(selState) { Md3TextToolbar(selState) }
+    // 改回系统自带的文本选择浮条（不再自己画，省得越改越崩）
+    val selToolbar = LocalTextToolbar.current
     val focus = LocalFocusManager.current
 
     enterVoiceMode = {
@@ -386,25 +386,9 @@ fun ChatScreen(vm: ChatViewModel) {
         }
     }
 
-    // 手指一按就收浮条的老逻辑会把正在拖选的浮条反复藏掉（这就是消息长按“闪”的原因），已删掉；
-    // 现在改成滚动时收 + 点浮条外空白处收
-    LaunchedEffect(listState.isScrollInProgress) {
-        if (listState.isScrollInProgress) selState.visible = false
-    }
-
-    var rootPos by remember { mutableStateOf(androidx.compose.ui.geometry.Offset.Zero) }
-    var rootSize by remember { mutableStateOf(androidx.compose.ui.unit.IntSize.Zero) }
-    var barSize by remember { mutableStateOf(androidx.compose.ui.unit.IntSize.Zero) }
-    val dpi = androidx.compose.ui.platform.LocalDensity.current
-    val selGapPx = with(dpi) { 10.dp.roundToPx() }
-
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .onGloballyPositioned {
-                rootPos = it.positionInWindow()
-                rootSize = it.size
-            }
     ) {
         CompositionLocalProvider(LocalTextToolbar provides selToolbar) {
         Column(
@@ -664,7 +648,6 @@ fun ChatScreen(vm: ChatViewModel) {
                                                                 return@awaitEachGesture
                                                             if (System.currentTimeMillis() - startedAt > 420) {
                                                                 change.consume()
-                                                                selState.visible = false
                                                                 enterVoiceMode()
                                                                 return@awaitEachGesture
                                                             }
@@ -716,37 +699,6 @@ fun ChatScreen(vm: ChatViewModel) {
             }
         }
 
-        // 浮条可见时铺一层透明的“点一下就收”，点浮条外面任意位置都能关掉（不抢焦点，键盘不会收）
-        if (selState.visible) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .pointerInput(Unit) {
-                        detectTapGestures {
-                            selState.visible = false
-                            focus.clearFocus()
-                        }
-                    }
-            )
-        }
-
-        if (selState.visible) {
-            val rect = selState.rect
-            val bw = barSize.width
-            val bh = barSize.height
-            val x = (rect.center.x - rootPos.x - bw / 2f).toInt()
-                .coerceIn(0, (rootSize.width - bw).coerceAtLeast(0))
-            var y = (rect.top - rootPos.y - bh - selGapPx).toInt()
-            if (y < 0) y = (rect.bottom - rootPos.y + selGapPx).toInt()
-            y = y.coerceIn(0, (rootSize.height - bh).coerceAtLeast(0))
-            Md3SelectionBar(
-                state = selState,
-                language = language,
-                modifier = Modifier
-                    .offset { androidx.compose.ui.unit.IntOffset(x, y) }
-                    .onSizeChanged { barSize = it }
-            )
-        }
     }
 
     if (showAttachSheet) {

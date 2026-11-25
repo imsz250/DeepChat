@@ -10,9 +10,9 @@
 
 ### 下载
 
-最新版：**[DeepChat 1.3.5 APK](https://github.com/imsz250/DeepChat/releases/latest)**
+最新版：**[DeepChat 1.3.6 APK](https://github.com/imsz250/DeepChat/releases/latest)**
 
-历史版本见 [Releases](https://github.com/imsz250/DeepChat/releases)（1.0.3 到 1.3.5 每个版本都带 APK）。release 包使用 debug 签名，同一签名可直接覆盖升级。
+历史版本见 [Releases](https://github.com/imsz250/DeepChat/releases)（1.0.3 到 1.3.6 每个版本都带 APK）。release 包使用 debug 签名，同一签名可直接覆盖升级。
 
 ### 功能
 
@@ -20,7 +20,7 @@
 - 多模型切换（deepseek-flash / deepseek-v4-pro / deepseek-chat / deepseek-reasoner），每个对话单独记录花费
 - Markdown 渲染：加粗、斜体、内联代码、标题、列表、引用、分割线、表格、代码块
 - 代码块：HTML / CSS / JS / SVG 可在本机 WebView 直接运行；其他语言只提供语法高亮查看、保存、复制
-- 语音输入：**按住说话、松手识别**；内置**中英双语离线识别**（sherpa-onnx + 中英双语 zipformer，断网可用、免费，中英混说）；也可切到在线识别（任意 OpenAI 兼容接口）
+- 语音输入：**按住说话、松手识别**；内置**中英双语离线识别**（sherpa-onnx + SenseVoiceSmall（中英混说），断网可用、免费，中英混说）；也可切到在线识别（任意 OpenAI 兼容接口）
 - 附件：气泡内直接渲染图片缩略图，点开是应用内图片查看器（双指缩放/双击复位）；文本附件为卡片，点开是应用内文本查看器（可选中、可复制全文）
 - 联网搜索：Bing（手机端 / 桌面端）→ 百度依次兜底，搜不到自动退回普通回答
 - 三语界面：简体中文、繁體中文（中国香港 / 中国台湾）、English（美国 / 英国）
@@ -58,9 +58,9 @@ A native Android third-party client for DeepSeek, built with Kotlin + Jetpack Co
 
 ### Download
 
-Latest: **[DeepChat 1.3.5 APK](https://github.com/imsz250/DeepChat/releases/latest)**
+Latest: **[DeepChat 1.3.6 APK](https://github.com/imsz250/DeepChat/releases/latest)**
 
-Older builds: [Releases](https://github.com/imsz250/DeepChat/releases) — every version from 1.0.3 to 1.3.5 ships an APK. Release builds are signed with the debug key, so they upgrade over each other directly.
+Older builds: [Releases](https://github.com/imsz250/DeepChat/releases) — every version from 1.0.3 to 1.3.6 ships an APK. Release builds are signed with the debug key, so they upgrade over each other directly.
 
 ### Features
 
