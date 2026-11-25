@@ -10,7 +10,7 @@
 
 ### 下载
 
-最新版：**[DeepChat 1.3.6 APK](https://github.com/imsz250/DeepChat/releases/latest)**
+最新版：**[DeepChat 1.3.6.1 APK](https://github.com/imsz250/DeepChat/releases/latest)**
 
 历史版本见 [Releases](https://github.com/imsz250/DeepChat/releases)。release 包使用 debug 签名，同一签名可直接覆盖升级。
 
@@ -18,7 +18,8 @@
 
 | 版本 | 状态 |
 |---|---|
-| **v1.3.6** | **稳定版（Stable）**，推荐使用 |
+| **v1.3.6.1** | **稳定版（Stable）**，推荐使用 |
+| v1.3.6 | 打底版本，被 1.3.6.1 取代（补回「回到最新消息」的向下箭头） |
 | v1.0.3 – v1.3.5 | Beta 测试版，仅供历史留档，不要拿来当正式版用 |
 
 上面那些旧版本都是在不停地试错中打磨出来的，交互改过很多回（浮条、语音条、输入区），只有 1.3.6 是现在真正能日用的状态。
@@ -33,7 +34,7 @@
 - 附件：气泡内直接渲染图片缩略图，点开是应用内图片查看器（双指缩放/双击复位）；文本附件为卡片，点开是应用内文本查看器（可选中、可复制全文）
 - 联网搜索：Bing（手机端 / 桌面端）→ 百度依次兜底，搜不到自动退回普通回答
 - 三语界面：简体中文、繁體中文（中国香港 / 中国台湾）、English（美国 / 英国）
-- 长按选择文本时走系统原生选择菜单（复制 / 全选），不再自绘浮条；消息里的 http(s) 链接可点开
+- 长按选择文本时走系统原生选择菜单（复制 / 全选），不再自绘浮条；往上翻历史后右下角出现向下箭头，点一下回到最新；消息里的 http(s) 链接可点开
 - 深色 / 浅色 / 跟随系统；诊断日志；对话本地保存
 
 ### 环境
@@ -67,7 +68,7 @@ A native Android third-party client for DeepSeek, built with Kotlin + Jetpack Co
 
 ### Download
 
-Latest: **[DeepChat 1.3.6 APK](https://github.com/imsz250/DeepChat/releases/latest)**
+Latest: **[DeepChat 1.3.6.1 APK](https://github.com/imsz250/DeepChat/releases/latest)**
 
 Older builds: [Releases](https://github.com/imsz250/DeepChat/releases). Release builds are signed with the debug key, so they upgrade over each other directly.
 
@@ -75,7 +76,8 @@ Older builds: [Releases](https://github.com/imsz250/DeepChat/releases). Release 
 
 | Version | Status |
 |---|---|
-| **v1.3.6** | **Stable**, recommended |
+| **v1.3.6.1** | **Stable**, recommended |
+| v1.3.6 | Baseline build, superseded by 1.3.6.1 (restores the scroll-to-latest arrow) |
 | v1.0.3 – v1.3.5 | Beta, kept for history only — do not treat them as production builds |
 
 The older ones were built through a lot of trial and error (selection toolbar, voice bar, composer), and 1.3.6 is the first state that is actually usable day to day.
@@ -90,7 +92,7 @@ The older ones were built through a lot of trial and error (selection toolbar, v
 - Attachments: inline image thumbnails opening into a built-in zoomable image viewer; text files open in a built-in text viewer (selectable, copy-all); files copied into app storage so they survive restarts
 - Web search: Bing (mobile / desktop) then Baidu as fallbacks; falls back to a plain answer when nothing comes back
 - Three UI languages: Simplified Chinese, Traditional Chinese (Hong Kong / Taiwan), English (US / UK)
-- Native system text-selection menu (copy / select all) instead of a custom toolbar; http(s) links in messages are tappable
+- Native system text-selection menu (copy / select all) instead of a custom toolbar; a down arrow appears when you scroll up, tap it to jump back to the latest message; http(s) links are tappable
 - Dark / light / system theme; diagnostic log; local conversation storage
 
 ### Requirements

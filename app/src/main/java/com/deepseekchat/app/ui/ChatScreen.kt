@@ -18,6 +18,8 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.State
@@ -59,6 +61,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -542,6 +545,41 @@ fun ChatScreen(vm: ChatViewModel) {
         }
 
         }
+        }
+
+        // 向上翻历史后，右下角冒出一个向下箭头，点一下回到最新消息
+        androidx.compose.animation.AnimatedVisibility(
+            visible = !autoFollow && chat.messages.isNotEmpty(),
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(end = 16.dp, bottom = 94.dp),
+            enter = fadeIn(tween(140)) + scaleIn(tween(140), initialScale = 0.85f),
+            exit = fadeOut(tween(120)) + scaleOut(tween(120), targetScale = 0.85f)
+        ) {
+            Surface(
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                shadowElevation = 3.dp,
+                modifier = Modifier
+                    .size(38.dp)
+                    .clickable {
+                        autoFollow = true
+                        if (chat.messages.isNotEmpty()) {
+                            scope.launch {
+                                listState.animateScrollToItem(chat.messages.lastIndex, Int.MAX_VALUE)
+                            }
+                        }
+                    }
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        Icons.Filled.KeyboardArrowDown,
+                        contentDescription = "回到最新",
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
         }
 
         // 底部浮层：附件 + 输入框（永远贴在底部，不会被挤掉）
