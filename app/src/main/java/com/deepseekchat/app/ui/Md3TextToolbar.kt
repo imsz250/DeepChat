@@ -38,6 +38,8 @@ class Md3TextToolbarState {
     internal var rect by mutableStateOf(Rect.Zero)
     internal var onCopy: (() -> Unit)? = null
     internal var onSelectAll: (() -> Unit)? = null
+    internal var onPaste: (() -> Unit)? = null
+    internal var onCut: (() -> Unit)? = null
 }
 
 class Md3TextToolbar(private val state: Md3TextToolbarState) : TextToolbar {
@@ -58,6 +60,8 @@ class Md3TextToolbar(private val state: Md3TextToolbarState) : TextToolbar {
         state.rect = rect
         state.onCopy = onCopyRequested
         state.onSelectAll = onSelectAllRequested
+        state.onPaste = onPasteRequested
+        state.onCut = onCutRequested
         state.visible = true
     }
 }
@@ -69,16 +73,16 @@ fun Md3TextSelectionHost(language: String = "zh-CN", content: @Composable () -> 
     val toolbar = remember(state) { Md3TextToolbar(state) }
     CompositionLocalProvider(LocalTextToolbar provides toolbar) {
         content()
-        Md3SelectionToolbar(
-            state = state,
-            copyLabel = L10n.t(language, "复制", "複製", "Copy"),
-            selectAllLabel = L10n.t(language, "全选", "全選", "Select all")
-        )
+        Md3SelectionToolbar(state = state, language = language)
     }
 }
 
 @Composable
-fun Md3SelectionToolbar(state: Md3TextToolbarState, copyLabel: String, selectAllLabel: String) {
+fun Md3SelectionToolbar(state: Md3TextToolbarState, language: String = "zh-CN") {
+    val copyLabel = L10n.t(language, "复制", "複製", "Copy")
+    val selectAllLabel = L10n.t(language, "全选", "全選", "Select all")
+    val pasteLabel = L10n.t(language, "粘贴", "貼上", "Paste")
+    val cutLabel = L10n.t(language, "剪切", "剪下", "Cut")
     if (!state.visible) return
     // Popup 的 offset 是相对“父布局”的，这里按窗口坐标换算，避免第二次长按时浮条跑到别处
     val anchorRect = state.rect
@@ -112,7 +116,7 @@ fun Md3SelectionToolbar(state: Md3TextToolbarState, copyLabel: String, selectAll
             // 点浮条外面任意空白处就收掉
             state.visible = false
         },
-        properties = PopupProperties(focusable = true)
+        properties = PopupProperties(focusable = false)
     ) {
         Surface(
             shape = RoundedCornerShape(24.dp),
@@ -121,28 +125,24 @@ fun Md3SelectionToolbar(state: Md3TextToolbarState, copyLabel: String, selectAll
             shadowElevation = 8.dp
         ) {
             Row(modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)) {
-                TextButton(
-                    onClick = {
-                        state.onCopy?.invoke()
-                        state.visible = false
-                    },
-                    enabled = state.onCopy != null
-                ) {
-                    Text(
-                        copyLabel,
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-                TextButton(
-                    onClick = { state.onSelectAll?.invoke() },
-                    enabled = state.onSelectAll != null
-                ) {
-                    Text(
-                        selectAllLabel,
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
+                listOf(
+                    cutLabel to state.onCut,
+                    copyLabel to state.onCopy,
+                    pasteLabel to state.onPaste,
+                    selectAllLabel to state.onSelectAll
+                ).forEach { (label, action) ->
+                    if (action != null) {
+                        TextButton(onClick = {
+                            action.invoke()
+                            if (label != selectAllLabel) state.visible = false
+                        }) {
+                            Text(
+                                label,
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
                 }
             }
         }

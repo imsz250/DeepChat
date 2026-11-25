@@ -10,9 +10,9 @@
 
 ### 下载
 
-最新版：**[DeepChat 1.2.8 APK](https://github.com/imsz250/DeepChat/releases/latest)**
+最新版：**[DeepChat 1.2.9 APK](https://github.com/imsz250/DeepChat/releases/latest)**
 
-历史版本见 [Releases](https://github.com/imsz250/DeepChat/releases)（1.0.3 到 1.2.8 每个版本都带 APK）。release 包使用 debug 签名，同一签名可直接覆盖升级。
+历史版本见 [Releases](https://github.com/imsz250/DeepChat/releases)（1.0.3 到 1.2.9 每个版本都带 APK）。release 包使用 debug 签名，同一签名可直接覆盖升级。
 
 ### 功能
 
@@ -58,9 +58,9 @@ A native Android third-party client for DeepSeek, built with Kotlin + Jetpack Co
 
 ### Download
 
-Latest: **[DeepChat 1.2.8 APK](https://github.com/imsz250/DeepChat/releases/latest)**
+Latest: **[DeepChat 1.2.9 APK](https://github.com/imsz250/DeepChat/releases/latest)**
 
-Older builds: [Releases](https://github.com/imsz250/DeepChat/releases) — every version from 1.0.3 to 1.2.8 ships an APK. Release builds are signed with the debug key, so they upgrade over each other directly.
+Older builds: [Releases](https://github.com/imsz250/DeepChat/releases) — every version from 1.0.3 to 1.2.9 ships an APK. Release builds are signed with the debug key, so they upgrade over each other directly.
 
 ### Features
 

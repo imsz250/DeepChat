@@ -495,11 +495,21 @@ fun ChatScreen(vm: ChatViewModel) {
         }
         }
 
-        Md3SelectionToolbar(
-            state = selState,
-            copyLabel = L10n.t(language, "复制", "複製", "Copy"),
-            selectAllLabel = L10n.t(language, "全选", "全選", "Select all")
-        )
+        // 浮条可见时铺一层透明的“点一下就收”，点浮条外面任意位置都能关掉（不抢焦点，键盘不会收）
+        if (selState.visible) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .pointerInput(Unit) {
+                        detectTapGestures {
+                            selState.visible = false
+                            focus.clearFocus()
+                        }
+                    }
+            )
+        }
+
+        Md3SelectionToolbar(state = selState, language = language)
 
         if (!autoFollow && chat.messages.isNotEmpty()) {
             Surface(
