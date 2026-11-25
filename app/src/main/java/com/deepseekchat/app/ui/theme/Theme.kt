@@ -18,26 +18,38 @@ import androidx.compose.ui.unit.dp
 enum class ThemeMode { SYSTEM, LIGHT, DARK }
 
 private val LightScheme = lightColorScheme(
-    primary = Color(0xFF4D6BFE),
+    // 全部按 M3 色调阶来：主色用 tone 40（不是品牌色的高饱和值），容器用 tone 90/10
+    primary = Color(0xFF3A56D4),
     onPrimary = Color(0xFFFFFFFF),
-    primaryContainer = Color(0xFFDDE2FF),
-    onPrimaryContainer = Color(0xFF001453),
-    secondary = Color(0xFF5A5D72),
+    primaryContainer = Color(0xFFDCE1FF),
+    onPrimaryContainer = Color(0xFF001158),
+    secondary = Color(0xFF4F5A82),
     onSecondary = Color(0xFFFFFFFF),
-    secondaryContainer = Color(0xFFDFE1F9),
-    onSecondaryContainer = Color(0xFF171A2C),
-    tertiary = Color(0xFF76546F),
+    secondaryContainer = Color(0xFFDAE1F9),
+    onSecondaryContainer = Color(0xFF101A34),
+    tertiary = Color(0xFF75546F),
     onTertiary = Color(0xFFFFFFFF),
     tertiaryContainer = Color(0xFFFFD7F0),
     onTertiaryContainer = Color(0xFF2D1229),
-    background = Color(0xFFFBFBFF),
+    background = Color(0xFFFAF8FF),
     onBackground = Color(0xFF1A1B21),
-    surface = Color(0xFFFBFBFF),
+    surface = Color(0xFFFAF8FF),
     onSurface = Color(0xFF1A1B21),
     surfaceVariant = Color(0xFFE2E1EC),
-    onSurfaceVariant = Color(0xFF45464F),
-    outline = Color(0xFF767680),
-    outlineVariant = Color(0xFFC6C6D0)
+    onSurfaceVariant = Color(0xFF44464F),
+    surfaceTint = Color(0xFF3A56D4),
+    inverseSurface = Color(0xFF2F3036),
+    inverseOnSurface = Color(0xFFF1F0F7),
+    inversePrimary = Color(0xFFB8C4FF),
+    outline = Color(0xFF757780),
+    outlineVariant = Color(0xFFC5C6D0),
+    surfaceDim = Color(0xFFDBD9E2),
+    surfaceBright = Color(0xFFFAF8FF),
+    surfaceContainerLowest = Color(0xFFFFFFFF),
+    surfaceContainerLow = Color(0xFFF4F3FA),
+    surfaceContainer = Color(0xFFEEEDF5),
+    surfaceContainerHigh = Color(0xFFE8E7EF),
+    surfaceContainerHighest = Color(0xFFE2E1E9)
 )
 
 private val DarkScheme = darkColorScheme(
@@ -59,8 +71,19 @@ private val DarkScheme = darkColorScheme(
     onSurface = Color(0xFFE3E1E9),
     surfaceVariant = Color(0xFF45464F),
     onSurfaceVariant = Color(0xFFC6C6D0),
+    surfaceTint = Color(0xFFB8C4FF),
+    inverseSurface = Color(0xFFE3E1E9),
+    inverseOnSurface = Color(0xFF2F3036),
+    inversePrimary = Color(0xFF3A56D4),
     outline = Color(0xFF90909A),
-    outlineVariant = Color(0xFF45464F)
+    outlineVariant = Color(0xFF45464F),
+    surfaceDim = Color(0xFF111318),
+    surfaceBright = Color(0xFF37393F),
+    surfaceContainerLowest = Color(0xFF0C0E13),
+    surfaceContainerLow = Color(0xFF191B21),
+    surfaceContainer = Color(0xFF1D1F25),
+    surfaceContainerHigh = Color(0xFF282A30),
+    surfaceContainerHighest = Color(0xFF33353B)
 )
 
 private val AppShapes = Shapes(
