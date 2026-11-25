@@ -26,6 +26,10 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.foundation.layout.offset
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -386,9 +390,20 @@ fun ChatScreen(vm: ChatViewModel) {
         if (listState.isScrollInProgress) selState.visible = false
     }
 
+    var rootPos by remember { mutableStateOf(androidx.compose.ui.geometry.Offset.Zero) }
+    var rootSize by remember { mutableStateOf(androidx.compose.ui.unit.IntSize.Zero) }
+    var barSize by remember { mutableStateOf(androidx.compose.ui.unit.IntSize.Zero) }
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    val selGap = with(density) { 10.dp.roundToPx() }
+    val selReserve = with(density) { 132.dp.roundToPx() }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .onGloballyPositioned {
+                rootPos = it.positionInWindow()
+                rootSize = it.size
+            }
     ) {
         CompositionLocalProvider(LocalTextToolbar provides selToolbar) {
         Column(
@@ -558,7 +573,26 @@ fun ChatScreen(vm: ChatViewModel) {
             )
         }
 
-        Md3SelectionToolbar(state = selState, language = language)
+        if (selState.visible) {
+            val rect = selState.rect
+            val bw = barSize.width
+            val bh = barSize.height
+            val cx = rect.center.x - rootPos.x
+            val top = rect.top - rootPos.y
+            val bottom = rect.bottom - rootPos.y
+            val x = (cx - bw / 2f).toInt()
+                .coerceIn(0, (rootSize.width - bw).coerceAtLeast(0))
+            var y = (top - bh - selGap).toInt()
+            if (y < 0) y = (bottom + selGap).toInt()
+            y = y.coerceIn(0, (rootSize.height - bh - selReserve).coerceAtLeast(0))
+            Md3SelectionBar(
+                state = selState,
+                language = language,
+                modifier = Modifier
+                    .offset { androidx.compose.ui.unit.IntOffset(x, y) }
+                    .onSizeChanged { barSize = it }
+            )
+        }
 
         if (!autoFollow && chat.messages.isNotEmpty()) {
             Surface(

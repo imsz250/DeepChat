@@ -210,9 +210,9 @@ fun SettingsScreen(vm: ChatViewModel) {
         val asrMode by vm.asrMode.collectAsStateWithLifecycle()
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             FilterChip(
-                selected = asrMode != "online",
-                onClick = { vm.setAsrMode("local"); vm.notify("已切换：本地离线识别") },
-                label = { Text(L10n.t(language,"本地离线（内置）","本地離線（內建）","On-device")) }
+                    selected = asrMode != "online",
+                    onClick = { vm.setAsrMode("local"); vm.notify("已切换：本地离线识别") },
+                    label = { Text(L10n.t(language,"本地离线（内置）","本地離線（內建）","On-device")) }
             )
             FilterChip(
                 selected = asrMode == "online",

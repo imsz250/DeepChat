@@ -12,13 +12,15 @@ android {
         applicationId = "com.deepseekchat.app"
         minSdk = 26
         targetSdk = 34
-        versionCode = 32
-        versionName = "1.3.1"
+        versionCode = 33
+        versionName = "1.3.2"
     }
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
+
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

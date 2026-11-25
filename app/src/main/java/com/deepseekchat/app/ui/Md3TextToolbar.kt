@@ -77,6 +77,44 @@ fun Md3TextSelectionHost(language: String = "zh-CN", content: @Composable () -> 
     }
 }
 
+/** 页面内联的浮条本体（不再用独立 Popup 窗口，避免和系统浮条重复、点击失效） */
+@Composable
+fun Md3SelectionBar(state: Md3TextToolbarState, language: String = "zh-CN", modifier: Modifier = Modifier) {
+    val copyLabel = L10n.t(language, "复制", "複製", "Copy")
+    val selectAllLabel = L10n.t(language, "全选", "全選", "Select all")
+    val pasteLabel = L10n.t(language, "粘贴", "貼上", "Paste")
+    val cutLabel = L10n.t(language, "剪切", "剪下", "Cut")
+    Surface(
+        shape = RoundedCornerShape(24.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        tonalElevation = 3.dp,
+        shadowElevation = 8.dp,
+        modifier = modifier
+    ) {
+        Row(modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)) {
+            listOf(
+                cutLabel to state.onCut,
+                copyLabel to state.onCopy,
+                pasteLabel to state.onPaste,
+                selectAllLabel to state.onSelectAll
+            ).forEach { (label, action) ->
+                if (action != null) {
+                    TextButton(onClick = {
+                        action.invoke()
+                        if (label != selectAllLabel) state.visible = false
+                    }) {
+                        Text(
+                            label,
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
 @Composable
 fun Md3SelectionToolbar(state: Md3TextToolbarState, language: String = "zh-CN") {
     val copyLabel = L10n.t(language, "复制", "複製", "Copy")
