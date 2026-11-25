@@ -55,6 +55,13 @@ fun SettingsScreen(vm: ChatViewModel) {
     val temperature by vm.temperature.collectAsStateWithLifecycle()
     val maxTokens by vm.maxTokens.collectAsStateWithLifecycle()
 
+    val asrBase by vm.asrBase.collectAsStateWithLifecycle()
+    val asrKey by vm.asrKey.collectAsStateWithLifecycle()
+    val asrModel by vm.asrModel.collectAsStateWithLifecycle()
+    var asrBaseText by remember(asrBase) { mutableStateOf(asrBase) }
+    var asrKeyText by remember(asrKey) { mutableStateOf(asrKey) }
+    var asrModelText by remember(asrModel) { mutableStateOf(asrModel) }
+
     var keyText by remember(apiKey) { mutableStateOf(apiKey) }
     var baseText by remember(baseUrl) { mutableStateOf(baseUrl) }
     val diagnostics by vm.diagnostics.collectAsStateWithLifecycle()
@@ -195,6 +202,56 @@ fun SettingsScreen(vm: ChatViewModel) {
             vm.notify("已设为 $value tokens")
         }) { Text("保存") }
 
+
+        Spacer(Modifier.height(18.dp))
+        SectionHeader(L10n.t(language,"语音识别（在线）","語音識別（線上）","Speech recognition (online)"))
+        Text(
+            text = L10n.t(
+                language,
+                "填一个 OpenAI 兼容的语音接口就能用内置录音识别，中英混说都行，不依赖手机自带的语音服务。默认走硅基流动（key 在 cloud.siliconflow.cn 申请，有免费额度）。留空则退回系统识别。",
+                "填一個 OpenAI 相容的語音介面就能用內建錄音識別，中英混說都行，不依賴手機自帶的語音服務。預設走硅基流動（key 在 cloud.siliconflow.cn 申請，有免費額度）。留空則退回系統識別。",
+                "Point it at any OpenAI-compatible transcription API and the built-in recorder works without the phone's speech service, Chinese and English mixed. Defaults to SiliconFlow (get a free-tier key at cloud.siliconflow.cn). Leave the key empty to fall back to the system recognizer."
+            ),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(Modifier.height(8.dp))
+        OutlinedTextField(
+            value = asrBaseText,
+            onValueChange = { asrBaseText = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text(L10n.t(language,"语音接口地址","語音介面網址","ASR base URL")) },
+            singleLine = true,
+            shape = RoundedCornerShape(14.dp),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri)
+        )
+        Spacer(Modifier.height(8.dp))
+        OutlinedTextField(
+            value = asrKeyText,
+            onValueChange = { asrKeyText = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text(L10n.t(language,"语音接口 Key","語音介面 Key","ASR API key")) },
+            singleLine = true,
+            shape = RoundedCornerShape(14.dp),
+            visualTransformation = PasswordVisualTransformation()
+        )
+        Spacer(Modifier.height(8.dp))
+        OutlinedTextField(
+            value = asrModelText,
+            onValueChange = { asrModelText = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text(L10n.t(language,"语音模型名","語音模型名稱","ASR model")) },
+            singleLine = true,
+            shape = RoundedCornerShape(14.dp),
+            supportingText = { Text("硅基流动：FunAudioLLM/SenseVoiceSmall；OpenAI：whisper-1") }
+        )
+        Spacer(Modifier.height(6.dp))
+        Button(onClick = {
+            vm.setAsrBase(asrBaseText.trim())
+            vm.setAsrKey(asrKeyText.trim())
+            vm.setAsrModel(asrModelText.trim().ifBlank { "FunAudioLLM/SenseVoiceSmall" })
+            vm.notify("语音识别设置已保存")
+        }) { Text(L10n.t(language,"保存语音设置","儲存語音設定","Save speech settings")) }
 
         Spacer(Modifier.height(18.dp))
         SectionHeader(L10n.t(language,"语言 / 地区","語言 / 地區","Language / Region"))

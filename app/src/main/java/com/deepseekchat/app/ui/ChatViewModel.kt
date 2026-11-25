@@ -117,6 +117,14 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
 
     // ---------------- 设置 ----------------
 
+    val asrBase: StateFlow<String> = prefs.asrBase
+    val asrKey: StateFlow<String> = prefs.asrKey
+    val asrModel: StateFlow<String> = prefs.asrModel
+
+    fun setAsrBase(v: String) = prefs.setAsrBase(v)
+    fun setAsrKey(v: String) = prefs.setAsrKey(v)
+    fun setAsrModel(v: String) = prefs.setAsrModel(v)
+
     fun setApiKey(v: String) = prefs.setApiKey(v)
 
     fun setBaseUrl(v: String) = prefs.setBaseUrl(v)

@@ -55,6 +55,34 @@ class AppPrefs(context: Context) {
         _language.value = value
     }
 
+    private val _asrBase = MutableStateFlow(
+        prefs.getString(KEY_ASR_BASE, "https://api.siliconflow.cn/v1").orEmpty()
+    )
+    val asrBase: StateFlow<String> = _asrBase.asStateFlow()
+
+    fun setAsrBase(v: String) {
+        prefs.edit().putString(KEY_ASR_BASE, v).apply()
+        _asrBase.value = v
+    }
+
+    private val _asrKey = MutableStateFlow(prefs.getString(KEY_ASR_KEY, "").orEmpty())
+    val asrKey: StateFlow<String> = _asrKey.asStateFlow()
+
+    fun setAsrKey(v: String) {
+        prefs.edit().putString(KEY_ASR_KEY, v).apply()
+        _asrKey.value = v
+    }
+
+    private val _asrModel = MutableStateFlow(
+        prefs.getString(KEY_ASR_MODEL, "FunAudioLLM/SenseVoiceSmall").orEmpty()
+    )
+    val asrModel: StateFlow<String> = _asrModel.asStateFlow()
+
+    fun setAsrModel(v: String) {
+        prefs.edit().putString(KEY_ASR_MODEL, v).apply()
+        _asrModel.value = v
+    }
+
     private val _spent = MutableStateFlow(prefs.getFloat(KEY_SPENT, 0f).toDouble())
     val spent: StateFlow<Double> = _spent.asStateFlow()
 
@@ -134,6 +162,9 @@ class AppPrefs(context: Context) {
         const val KEY_SPENT = "total_spent"
         const val KEY_LANGUAGE = "app_language"
         const val KEY_WEB = "web_search_enabled"
+        const val KEY_ASR_BASE = "asr_base"
+        const val KEY_ASR_KEY = "asr_key"
+        const val KEY_ASR_MODEL = "asr_model"
     }
 }
 

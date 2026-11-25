@@ -57,6 +57,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -82,6 +84,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.deepseekchat.app.data.AsrClient
 import androidx.core.content.FileProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.deepseekchat.app.data.Attachment
@@ -137,6 +140,115 @@ fun ChatScreen(vm: ChatViewModel) {
             } else {
                 vm.notify(L10n.t(language, "没听清，再说一次", "沒聽清，再說一次", "Didn't catch that"))
             }
+        }
+    }
+
+    // ---- 内置语音识别：录音 → 上传到 OpenAI 兼容接口（不依赖系统语音服务）----
+    var recording by remember { mutableStateOf(false) }
+    var recorderRef by remember { mutableStateOf<android.media.AudioRecord?>(null) }
+    var recordFile by remember { mutableStateOf<File?>(null) }
+    var recordThread by remember { mutableStateOf<Thread?>(null) }
+    var doStartRecord: () -> Unit = {}
+
+    val micPermission = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) doStartRecord() else vm.notify("没有录音权限，开不了语音输入")
+    }
+
+    fun stopVoiceRecord() {
+        recording = false
+        runCatching { recorderRef?.stop() }
+        runCatching { recorderRef?.release() }
+        recorderRef = null
+        val file = recordFile
+        scope.launch {
+            val pcm = withContext(Dispatchers.IO) {
+                runCatching { file?.readBytes() ?: ByteArray(0) }.getOrDefault(ByteArray(0))
+            }
+            runCatching { file?.delete() }
+            if (pcm.size < 3200) {
+                vm.notify("太短了，按一下麦克风说一句再点一下结束")
+                return@launch
+            }
+            vm.notify("正在识别…")
+            val wav = AsrClient.pcmToWav(pcm)
+            val said = withContext(Dispatchers.IO) {
+                AsrClient.transcribe(vm.asrBase.value, vm.asrKey.value, vm.asrModel.value, wav)
+            }
+            if (said.isNullOrBlank()) {
+                vm.notify("识别失败：去设置里检查「语音识别」的接口地址和 Key")
+            } else {
+                input = if (input.isBlank()) said else input + " " + said
+            }
+        }
+    }
+
+    doStartRecord = {
+        if (recording) {
+            stopVoiceRecord()
+        } else {
+            val minBuf = android.media.AudioRecord.getMinBufferSize(
+                16000,
+                android.media.AudioFormat.CHANNEL_IN_MONO,
+                android.media.AudioFormat.ENCODING_PCM_16BIT
+            )
+            val record = runCatching {
+                android.media.AudioRecord(
+                    android.media.MediaRecorder.AudioSource.MIC,
+                    16000,
+                    android.media.AudioFormat.CHANNEL_IN_MONO,
+                    android.media.AudioFormat.ENCODING_PCM_16BIT,
+                    minBuf * 2
+                )
+            }.getOrNull()
+            if (record == null || record.state != android.media.AudioRecord.STATE_INITIALIZED) {
+                vm.notify("麦克风打不开（可能被别的 App 占着）")
+            } else {
+                val file = File(context.cacheDir, "voice_" + System.currentTimeMillis() + ".pcm")
+                val out = file.outputStream()
+                recorderRef = record
+                recordFile = file
+                recording = true
+                record.startRecording()
+                recordThread = Thread {
+                    val buf = ByteArray(minBuf)
+                    while (recording) {
+                        val n = runCatching { record.read(buf, 0, buf.size) }.getOrDefault(0)
+                        if (n > 0) runCatching { out.write(buf, 0, n) }
+                    }
+                    runCatching { out.close() }
+                }.also { it.start() }
+                vm.notify("开始录音，点一下麦克风结束")
+            }
+        }
+    }
+
+    fun systemVoiceIntent(): Intent =
+        Intent(android.speech.RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+            putExtra(
+                android.speech.RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                android.speech.RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
+            )
+            putExtra(
+                android.speech.RecognizerIntent.EXTRA_LANGUAGE,
+                if (language.startsWith("en")) "en-US" else "zh-CN"
+            )
+        }
+
+    fun onMicClick() {
+        if (vm.asrKey.value.isBlank()) {
+            runCatching { voiceLauncher.launch(systemVoiceIntent()) }
+                .onFailure { vm.notify("先去设置里填「语音识别」的 Key，或装个语音服务") }
+            return
+        }
+        val granted = androidx.core.content.ContextCompat.checkSelfPermission(
+            context, android.Manifest.permission.RECORD_AUDIO
+        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        if (!granted) {
+            micPermission.launch(android.Manifest.permission.RECORD_AUDIO)
+        } else {
+            doStartRecord()
         }
     }
 
@@ -449,11 +561,17 @@ fun ChatScreen(vm: ChatViewModel) {
                         maxLines = 5,
                         shape = RoundedCornerShape(22.dp),
                         trailingIcon = {
-                            IconButton(onClick = { startVoice() }) {
+                            IconButton(onClick = { onMicClick() }) {
                                 Icon(
                                     AppIcons.Mic,
-                                    contentDescription = L10n.t(language, "语音输入", "語音輸入", "Voice input"),
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    contentDescription = L10n.t(
+                                        language,
+                                        if (recording) "正在录音，点一下结束" else "语音输入",
+                                        if (recording) "正在錄音，點一下結束" else "語音輸入",
+                                        if (recording) "Recording, tap to stop" else "Voice input"
+                                    ),
+                                    tint = if (recording) MaterialTheme.colorScheme.error
+                                    else MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
