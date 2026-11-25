@@ -62,6 +62,7 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
     val model: StateFlow<String> = prefs.model
     val themeMode: StateFlow<ThemeMode> = prefs.themeMode
     val dynamicColor: StateFlow<Boolean> = prefs.dynamicColor
+    val themeSeed: StateFlow<String> = prefs.themeSeed
     val temperature: StateFlow<Float> = prefs.temperature
     val maxTokens: StateFlow<Int> = prefs.maxTokens
     val conversations: StateFlow<List<Conversation>> = store.items
@@ -142,6 +143,8 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
     fun setThemeMode(v: ThemeMode) = prefs.setThemeMode(v)
 
     fun setDynamicColor(v: Boolean) = prefs.setDynamicColor(v)
+
+    fun setThemeSeed(seed: String) = prefs.setThemeSeed(seed)
 
     fun setModel(v: String) {
         val allowed = DEEPSEEK_MODELS.any { it.id == v }

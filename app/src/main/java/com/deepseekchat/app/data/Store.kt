@@ -33,6 +33,13 @@ class AppPrefs(context: Context) {
     private val _dynamicColor = MutableStateFlow(prefs.getBoolean(KEY_DYNAMIC, true))
     val dynamicColor: StateFlow<Boolean> = _dynamicColor.asStateFlow()
 
+    /** wallpaper = 跟壁纸取色；其余取值为 SeedColor.key（手动配色） */
+    private val _themeSeed = MutableStateFlow(
+        prefs.getString(KEY_SEED, com.deepseekchat.app.ui.theme.SEED_WALLPAPER)
+            ?: com.deepseekchat.app.ui.theme.SEED_WALLPAPER
+    )
+    val themeSeed: StateFlow<String> = _themeSeed.asStateFlow()
+
     private val _temperature = MutableStateFlow(prefs.getFloat(KEY_TEMP, 0.7f))
     val temperature: StateFlow<Float> = _temperature.asStateFlow()
 
@@ -142,6 +149,12 @@ class AppPrefs(context: Context) {
         _dynamicColor.value = enabled
     }
 
+    /** 选一个种子色；"wallpaper" 表示回到壁纸动态取色 */
+    fun setThemeSeed(seed: String) {
+        prefs.edit().putString(KEY_SEED, seed).apply()
+        _themeSeed.value = seed
+    }
+
     fun setTemperature(value: Float) {
         prefs.edit().putFloat(KEY_TEMP, value).apply()
         _temperature.value = value
@@ -163,6 +176,7 @@ class AppPrefs(context: Context) {
         const val KEY_MODEL = "model"
         const val KEY_THEME = "theme_mode"
         const val KEY_DYNAMIC = "dynamic_color"
+        const val KEY_SEED = "theme_seed"
         const val KEY_TEMP = "temperature"
         const val KEY_TOKENS = "max_tokens"
         const val KEY_PROMPT = "system_prompt"

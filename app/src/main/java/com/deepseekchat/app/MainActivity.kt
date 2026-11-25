@@ -66,7 +66,8 @@ class MainActivity : ComponentActivity() {
         setContent {
             val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
             val dynamicColor by viewModel.dynamicColor.collectAsStateWithLifecycle()
-            DeepChatTheme(themeMode = themeMode, dynamicColor = dynamicColor) {
+            val seedKey by viewModel.themeSeed.collectAsStateWithLifecycle()
+            DeepChatTheme(themeMode = themeMode, dynamicColor = dynamicColor, seedKey = seedKey) {
                 MainScreen(viewModel)
             }
         }

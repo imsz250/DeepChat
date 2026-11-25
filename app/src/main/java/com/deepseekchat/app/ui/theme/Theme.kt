@@ -17,6 +17,9 @@ import androidx.compose.ui.unit.dp
 
 enum class ThemeMode { SYSTEM, LIGHT, DARK }
 
+/** 壁纸动态取色的特殊 key，其余 key 见 SeedColor */
+const val SEED_WALLPAPER = "wallpaper"
+
 private val LightScheme = lightColorScheme(
     // 全部按 M3 色调阶来：主色用 tone 40（不是品牌色的高饱和值），容器用 tone 90/10
     primary = Color(0xFF3A56D4),
@@ -98,6 +101,7 @@ private val AppShapes = Shapes(
 fun DeepChatTheme(
     themeMode: ThemeMode = ThemeMode.SYSTEM,
     dynamicColor: Boolean = true,
+    seedKey: String = SeedColor.DEFAULT.key,
     content: @Composable () -> Unit
 ) {
     val dark = when (themeMode) {
@@ -106,9 +110,13 @@ fun DeepChatTheme(
         ThemeMode.DARK -> true
     }
     val supportsDynamic = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+    // wallpaper = 跟壁纸取色（Android 12+）；否则用手动种子色（Android 11 及以下走这条路）
+    val wallpaper = dynamicColor && supportsDynamic && seedKey == SEED_WALLPAPER
+    val manual = SeedColor.of(seedKey)?.takeIf { it != SeedColor.DEFAULT }
     val colorScheme = when {
-        dynamicColor && supportsDynamic && dark -> dynamicDarkColorScheme(LocalContext.current)
-        dynamicColor && supportsDynamic -> dynamicLightColorScheme(LocalContext.current)
+        wallpaper && dark -> dynamicDarkColorScheme(LocalContext.current)
+        wallpaper -> dynamicLightColorScheme(LocalContext.current)
+        manual != null -> seedScheme(manual, dark)
         dark -> DarkScheme
         else -> LightScheme
     }

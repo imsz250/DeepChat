@@ -73,7 +73,8 @@ class CodePreviewActivity : ComponentActivity() {
             val vm: ChatViewModel = viewModel()
             val themeMode by vm.themeMode.collectAsStateWithLifecycle()
             val dynamicColor by vm.dynamicColor.collectAsStateWithLifecycle()
-            DeepChatTheme(themeMode = themeMode, dynamicColor = dynamicColor) {
+            val seedKey by vm.themeSeed.collectAsStateWithLifecycle()
+            DeepChatTheme(themeMode = themeMode, dynamicColor = dynamicColor, seedKey = seedKey) {
                 val html = remember(lang, code, mode) { buildHtml(lang, code, mode) }
                 var pageTitle by remember { mutableStateOf(displayLang(lang)) }
                 val saveLauncher = rememberLauncherForActivityResult(

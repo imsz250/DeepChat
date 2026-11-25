@@ -51,7 +51,8 @@ class WebPageActivity : ComponentActivity() {
                     ThemeMode.valueOf(prefs.getString("theme_mode", ThemeMode.SYSTEM.name)!!)
                 }.getOrDefault(ThemeMode.SYSTEM)
             }
-            DeepChatTheme(themeMode = mode, dynamicColor = true) {
+            val seed = prefs.getString("theme_seed", "wallpaper") ?: "wallpaper"
+            DeepChatTheme(themeMode = mode, dynamicColor = true, seedKey = seed) {
                 WebPageScreen(url = url, title = title, onClose = { finish() })
             }
         }

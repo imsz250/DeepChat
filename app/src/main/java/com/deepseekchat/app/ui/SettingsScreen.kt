@@ -1,7 +1,9 @@
 package com.deepseekchat.app.ui
 
 import android.os.Build
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -10,9 +12,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -35,6 +41,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.material3.TextButton
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -45,6 +55,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.deepseekchat.app.data.DEEPSEEK_MODELS
 import com.deepseekchat.app.WebPageActivity
+import com.deepseekchat.app.ui.theme.SEED_WALLPAPER
+import com.deepseekchat.app.ui.theme.SeedColor
 import com.deepseekchat.app.ui.theme.ThemeMode
 
 @Composable
@@ -54,6 +66,7 @@ fun SettingsScreen(vm: ChatViewModel) {
     val model by vm.model.collectAsStateWithLifecycle()
     val themeMode by vm.themeMode.collectAsStateWithLifecycle()
     val dynamicColor by vm.dynamicColor.collectAsStateWithLifecycle()
+    val themeSeed by vm.themeSeed.collectAsStateWithLifecycle()
     val temperature by vm.temperature.collectAsStateWithLifecycle()
     val maxTokens by vm.maxTokens.collectAsStateWithLifecycle()
 
@@ -308,26 +321,70 @@ fun SettingsScreen(vm: ChatViewModel) {
 
         HorizontalDivider(Modifier.padding(vertical = 10.dp))
 
+        Text(
+            L10n.t(language,"主题配色","主題配色","Color theme"),
+            style = MaterialTheme.typography.bodyLarge
+        )
+        Spacer(Modifier.height(2.dp))
+        Text(
+            text = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+                L10n.t(
+                    language,
+                    "第一个是跟随壁纸自动取色；后面是手动挑一颗底色，生成的是同一套 Material You 色板（36 个色阶全都有）。",
+                    "第一個是跟隨桌布自動取色；後面是手動挑一顆底色，生成的是同一套 Material You 色板（36 個色階全都有）。",
+                    "The first dot follows your wallpaper; the rest are manual seed colors, generated from the same Material You tonal palette (all 36 roles)."
+                )
+            else
+                L10n.t(
+                    language,
+                    "这个系统版本不支持壁纸取色，用手动配色就行——色板算法和 Android 12 的壁纸取色完全一样。",
+                    "這個系統版本不支援桌布取色，用手動配色就行——色板演算法和 Android 12 的桌布取色完全相同。",
+                    "Wallpaper colors need Android 12+; pick a seed color instead — same tonal palette algorithm as Android 12's wallpaper colors."
+                ),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(Modifier.height(10.dp))
+
+        val supportsWallpaper = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
         Row(
             modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(Modifier.weight(1f)) {
-                Text(L10n.t(language,"跟随壁纸取色","跟隨桌布取色","Wallpaper colors"), style = MaterialTheme.typography.bodyLarge)
-                Text(
-                    text = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
-                        "用壁纸色调当主题色"
-                    else "系统版本不支持",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+            SeedDot(
+                selected = themeSeed == SEED_WALLPAPER,
+                enabled = supportsWallpaper,
+                brush = Brush.sweepGradient(
+                    listOf(
+                        Color(0xFF3A56D4), Color(0xFF00897B), Color(0xFFF5B301),
+                        Color(0xFFE44A8C), Color(0xFF7B3FF2), Color(0xFF3A56D4)
+                    )
+                ),
+                onClick = {
+                    vm.setThemeSeed(SEED_WALLPAPER)
+                    vm.setDynamicColor(true)
+                }
+            )
+            SeedColor.entries.forEach { seed ->
+                SeedDot(
+                    selected = themeSeed == seed.key,
+                    brush = Brush.linearGradient(listOf(Color(seed.seed), Color(seed.seed))),
+                    onClick = {
+                        vm.setThemeSeed(seed.key)
+                        vm.setDynamicColor(false)
+                    }
                 )
             }
-            Switch(
-                checked = dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S,
-                enabled = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S,
-                onCheckedChange = vm::setDynamicColor
-            )
         }
+        Spacer(Modifier.height(6.dp))
+        val currentLabel = SeedColor.of(themeSeed)?.let { L10n.t(language, it.zh, it.tw, it.en) }
+            ?: L10n.t(language, "跟壁纸取色", "跟隨桌布取色", "Wallpaper")
+        Text(
+            text = L10n.t(language, "当前：$currentLabel", "目前：$currentLabel", "Current: $currentLabel"),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
 
 
         Spacer(Modifier.height(18.dp))
@@ -503,6 +560,31 @@ private fun ThemeRow(label: String, selected: Boolean, onClick: () -> Unit) {
         Spacer(Modifier.width(6.dp))
         Text(label, style = MaterialTheme.typography.bodyLarge)
     }
+}
+
+@Composable
+private fun SeedDot(
+    selected: Boolean,
+    brush: Brush,
+    enabled: Boolean = true,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .size(38.dp)
+            .then(
+                if (selected) Modifier.border(
+                    width = 2.dp,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    shape = CircleShape
+                ) else Modifier
+            )
+            .padding(4.dp)
+            .clip(CircleShape)
+            .background(brush)
+            .alpha(if (enabled) 1f else 0.35f)
+            .clickable(enabled = enabled, onClick = onClick)
+    )
 }
 
 private fun formatTraceTime(at: Long): String =

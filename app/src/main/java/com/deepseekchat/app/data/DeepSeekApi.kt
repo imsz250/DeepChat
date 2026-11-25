@@ -114,9 +114,10 @@ object DeepSeekApi {
 
                 val delta = obj.optJSONArray("choices")?.optJSONObject(0)?.optJSONObject("delta")
                     ?: continue
-                val content = if (delta.has("content")) delta.optString("content") else null
-                val reasoning =
-                    if (delta.has("reasoning_content")) delta.optString("reasoning_content") else null
+                // 注意：JSON 里字段值可能是 null，optString 会把它变成字符串 "null"，
+                // 必须先用 isNull 判掉，否则思考过程里会刷出一堆 nullnullnull
+                val content = delta.optStringOrNull("content")
+                val reasoning = delta.optStringOrNull("reasoning_content")
                 if ((content?.isNotEmpty() == true) || (reasoning?.isNotEmpty() == true)) {
                     received = true
                     onDelta(content, reasoning)
@@ -234,3 +235,10 @@ data class BalanceInfo(
     val granted: String,
     val toppedUp: String
 )
+
+/** org.json 的 optString 会把 JSON null 转成 "null" 字符串，这里按真 null 处理 */
+private fun JSONObject.optStringOrNull(name: String): String? {
+    if (!has(name) || isNull(name)) return null
+    val v = optString(name)
+    return v.takeIf { it != "null" }
+}
