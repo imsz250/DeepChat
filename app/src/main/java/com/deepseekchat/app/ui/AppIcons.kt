@@ -250,6 +250,66 @@ object AppIcons {
         }.build()
     }
 
+    val Keyboard: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "Keyboard",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f
+        ).apply {
+            path(fill = SolidColor(Color.White)) {
+                // 外壳
+                moveTo(20f, 5f)
+                horizontalLineTo(4f)
+                curveTo(2.9f, 5f, 2f, 5.9f, 2f, 7f)
+                verticalLineTo(17f)
+                curveTo(2f, 18.1f, 2.9f, 19f, 4f, 19f)
+                horizontalLineTo(20f)
+                curveTo(21.1f, 19f, 22f, 18.1f, 22f, 17f)
+                verticalLineTo(7f)
+                curveTo(22f, 5.9f, 21.1f, 5f, 20f, 5f)
+                close()
+                // 键位
+                moveTo(4.5f, 8.2f)
+                horizontalLineTo(6.2f)
+                verticalLineTo(9.9f)
+                horizontalLineTo(4.5f)
+                close()
+                moveTo(7.1f, 8.2f)
+                horizontalLineTo(8.8f)
+                verticalLineTo(9.9f)
+                horizontalLineTo(7.1f)
+                close()
+                moveTo(9.7f, 8.2f)
+                horizontalLineTo(11.4f)
+                verticalLineTo(9.9f)
+                horizontalLineTo(9.7f)
+                close()
+                moveTo(12.3f, 8.2f)
+                horizontalLineTo(14f)
+                verticalLineTo(9.9f)
+                horizontalLineTo(12.3f)
+                close()
+                moveTo(14.9f, 8.2f)
+                horizontalLineTo(16.6f)
+                verticalLineTo(9.9f)
+                horizontalLineTo(14.9f)
+                close()
+                moveTo(17.5f, 8.2f)
+                horizontalLineTo(19.2f)
+                verticalLineTo(9.9f)
+                horizontalLineTo(17.5f)
+                close()
+                moveTo(6.2f, 15.2f)
+                horizontalLineTo(17.8f)
+                verticalLineTo(16.9f)
+                horizontalLineTo(6.2f)
+                close()
+            }
+        }.build()
+    }
+
     val Mic: ImageVector by lazy {
         ImageVector.Builder(
             name = "Mic",

@@ -65,6 +65,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.PointerEventPass
@@ -145,20 +149,28 @@ fun ChatScreen(vm: ChatViewModel) {
         }
     }
 
-    // ---- 内置语音识别：录音 → 上传到 OpenAI 兼容接口（不依赖系统语音服务）----
+    // ---- 内置语音识别：点麦克风进入「按住说话」语音条 ----
     var recording by remember { mutableStateOf(false) }
     var recorderRef by remember { mutableStateOf<android.media.AudioRecord?>(null) }
     var recordFile by remember { mutableStateOf<File?>(null) }
     var recordThread by remember { mutableStateOf<Thread?>(null) }
+    var voiceMode by remember { mutableStateOf(false) }
+    var voiceStatus by remember { mutableStateOf("") }
+    var voiceCancelArmed by remember { mutableStateOf(false) }
     var doStartRecord: () -> Unit = {}
+    var doStopRecord: (Boolean) -> Unit = {}
+
+    fun hasMicPermission(): Boolean =
+        androidx.core.content.ContextCompat.checkSelfPermission(
+            context, android.Manifest.permission.RECORD_AUDIO
+        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
 
     val micPermission = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        if (granted) doStartRecord() else vm.notify("没有录音权限，开不了语音输入")
-    }
+    ) { granted -> if (!granted) voiceMode = false }
 
-    fun stopVoiceRecord() {
+    // 松手：false=发送、true=上滑取消
+    doStopRecord = { cancel ->
         recording = false
         runCatching { recorderRef?.stop() }
         runCatching { recorderRef?.release() }
@@ -169,28 +181,33 @@ fun ChatScreen(vm: ChatViewModel) {
                 runCatching { file?.readBytes() ?: ByteArray(0) }.getOrDefault(ByteArray(0))
             }
             runCatching { file?.delete() }
-            if (pcm.size < 6400) {
-                vm.notify("按住麦克风再说一句，说完再松手")
-                return@launch
-            }
-            val mode = vm.asrMode.value
-            vm.notify(if (mode == "online") "正在识别…" else "正在本地识别…")
-            val said = withContext(Dispatchers.IO) {
-                if (mode == "online") {
-                    AsrClient.transcribe(
-                        vm.asrBase.value, vm.asrKey.value, vm.asrModel.value, AsrClient.pcmToWav(pcm)
-                    )
-                } else {
-                    LocalAsr.recognize(context, pcm)
-                }
-            }
-            if (said.isNullOrBlank()) {
-                vm.notify(
-                    if (mode == "online") "识别失败：去设置里检查「语音识别」的接口地址和 Key"
-                    else "本地识别没出结果，再说慢一点长一点，或在设置里切到在线识别"
+            when {
+                cancel -> voiceStatus = ""
+                pcm.size < 6400 -> voiceStatus = L10n.t(
+                    language, "太短了，按住再说", "太短了，按住再說", "Too short, hold and speak"
                 )
-            } else {
-                input = if (input.isBlank()) said else input + " " + said
+                else -> {
+                    voiceStatus = L10n.t(language, "识别中…", "識別中…", "Transcribing…")
+                    val mode = if (vm.asrMode.value == "online" && vm.asrKey.value.isBlank()) "local" else vm.asrMode.value
+                    val said = withContext(Dispatchers.IO) {
+                        if (mode == "online") {
+                            AsrClient.transcribe(
+                                vm.asrBase.value, vm.asrKey.value, vm.asrModel.value, AsrClient.pcmToWav(pcm)
+                            )
+                        } else {
+                            LocalAsr.recognize(context, pcm)
+                        }
+                    }
+                    voiceStatus = ""
+                    if (said.isNullOrBlank()) {
+                        voiceStatus = L10n.t(
+                            language, "没听清，再说一次", "沒聽清，再說一次", "Didn't catch that"
+                        )
+                    } else {
+                        input = ""
+                        vm.send(said)
+                    }
+                }
             }
         }
     }
@@ -212,7 +229,10 @@ fun ChatScreen(vm: ChatViewModel) {
                 )
             }.getOrNull()
             if (record == null || record.state != android.media.AudioRecord.STATE_INITIALIZED) {
-                vm.notify("麦克风打不开（可能被别的 App 占着）")
+                voiceStatus = L10n.t(
+                    language, "麦克风打不开（可能被别的 App 占着）", "麥克風打不開（可能被別的 App 佔着）",
+                    "Microphone unavailable (maybe another app is using it)"
+                )
             } else {
                 if (vm.asrMode.value != "online") {
                     scope.launch(Dispatchers.IO) { runCatching { LocalAsr.installIfNeeded(context) } }
@@ -231,41 +251,22 @@ fun ChatScreen(vm: ChatViewModel) {
                     }
                     runCatching { out.close() }
                 }.also { it.start() }
-                vm.notify("正在录音，说完松手")
+                voiceStatus = ""
             }
         }
     }
 
-    fun systemVoiceIntent(): Intent =
-        Intent(android.speech.RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-            putExtra(
-                android.speech.RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-                android.speech.RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
-            )
-            putExtra(
-                android.speech.RecognizerIntent.EXTRA_LANGUAGE,
-                if (language.startsWith("en")) "en-US" else "zh-CN"
-            )
-        }
-
-    fun onMicPress() {
-        if (vm.asrMode.value == "online" && vm.asrKey.value.isBlank()) {
-            runCatching { voiceLauncher.launch(systemVoiceIntent()) }
-                .onFailure { vm.notify("在线模式缺 Key：去设置里填 Key，或把识别方式改成本地离线") }
-            return
-        }
-        val granted = androidx.core.content.ContextCompat.checkSelfPermission(
-            context, android.Manifest.permission.RECORD_AUDIO
-        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-        if (!granted) {
+    fun onVoiceHoldStart(): Boolean {
+        if (!hasMicPermission()) {
             micPermission.launch(android.Manifest.permission.RECORD_AUDIO)
-        } else {
-            doStartRecord()
+            return false
         }
+        doStartRecord()
+        return recording
     }
 
-    fun onMicRelease() {
-        if (recording) stopVoiceRecord()
+    fun onVoiceHoldEnd(cancel: Boolean) {
+        if (recording) doStopRecord(cancel)
     }
 
     fun startVoice() {
@@ -562,6 +563,20 @@ fun ChatScreen(vm: ChatViewModel) {
                     .padding(start = 6.dp, end = 12.dp, top = 6.dp, bottom = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                if (voiceMode) {
+                    VoiceBar(
+                        modifier = Modifier.weight(1f),
+                        language = language,
+                        status = voiceStatus,
+                        recording = recording,
+                        armed = voiceCancelArmed,
+                        onArmChange = { voiceCancelArmed = it },
+                        onCamera = { showAttachSheet = true },
+                        onKeyboard = { voiceMode = false },
+                        onHoldStart = { onVoiceHoldStart() },
+                        onHoldEnd = { onVoiceHoldEnd(it) }
+                    )
+                } else {
                 Surface(
                     shape = CircleShape,
                     color = MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -587,31 +602,20 @@ fun ChatScreen(vm: ChatViewModel) {
                         maxLines = 5,
                         shape = RoundedCornerShape(22.dp),
                         trailingIcon = {
-                            // 按住说话、松手结束（对标微信/豆包的语音输入）
-                            Box(
-                                modifier = Modifier
-                                    .size(44.dp)
-                                    .pointerInput(recording) {
-                                        detectTapGestures(
-                                            onPress = {
-                                                onMicPress()
-                                                tryAwaitRelease()
-                                                onMicRelease()
-                                            }
-                                        )
-                                    },
-                                contentAlignment = Alignment.Center
+                            IconButton(
+                                onClick = {
+                                    voiceMode = true
+                                    keyboard?.hide()
+                                    focus.clearFocus()
+                                    if (!hasMicPermission()) {
+                                        micPermission.launch(android.Manifest.permission.RECORD_AUDIO)
+                                    }
+                                }
                             ) {
                                 Icon(
                                     AppIcons.Mic,
-                                    contentDescription = L10n.t(
-                                        language,
-                                        if (recording) "正在录音，松手结束" else "按住说话",
-                                        if (recording) "正在錄音，放手結束" else "按住說話",
-                                        if (recording) "Recording, release to stop" else "Hold to talk"
-                                    ),
-                                    tint = if (recording) MaterialTheme.colorScheme.error
-                                    else MaterialTheme.colorScheme.onSurfaceVariant
+                                    contentDescription = L10n.t(language, "语音输入", "語音輸入", "Voice input"),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
@@ -634,6 +638,7 @@ fun ChatScreen(vm: ChatViewModel) {
                     ) {
                         Icon(Icons.Filled.Send, contentDescription = "发送")
                     }
+                }
                 }
             }
         }
@@ -673,6 +678,101 @@ fun ChatScreen(vm: ChatViewModel) {
                         )
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun VoiceBar(
+    language: String,
+    status: String,
+    recording: Boolean,
+    armed: Boolean,
+    modifier: Modifier = Modifier,
+    onArmChange: (Boolean) -> Unit,
+    onCamera: () -> Unit,
+    onKeyboard: () -> Unit,
+    onHoldStart: () -> Boolean,
+    onHoldEnd: (Boolean) -> Unit
+) {
+    val label = when {
+        status.isNotBlank() -> status
+        armed -> L10n.t(language, "松开手指，取消发送", "鬆開手指，取消傳送", "Release to cancel")
+        recording -> L10n.t(language, "松手发送", "放手傳送", "Release to send")
+        else -> L10n.t(language, "按住说话", "按住說話", "Hold to talk")
+    }
+    Surface(
+        shape = RoundedCornerShape(24.dp),
+        color = if (armed) MaterialTheme.colorScheme.errorContainer
+        else MaterialTheme.colorScheme.surfaceContainerHigh,
+        modifier = modifier.height(48.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clickable(onClick = onCamera),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    AppIcons.Camera,
+                    contentDescription = L10n.t(language, "拍照", "拍照", "Camera"),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .pointerInput(Unit) {
+                        awaitEachGesture {
+                            val down = awaitFirstDown()
+                            down.consume()
+                            onArmChange(false)
+                            val started = onHoldStart()
+                            if (!started) return@awaitEachGesture
+                            val threshold = 72.dp.toPx()
+                            var cancel = false
+                            while (true) {
+                                val event = awaitPointerEvent()
+                                val change = event.changes.firstOrNull { it.id == down.id } ?: break
+                                if (!change.pressed) break
+                                val dy = change.position.y - down.position.y
+                                val c = dy < -threshold
+                                if (c != cancel) {
+                                    cancel = c
+                                    onArmChange(c)
+                                }
+                                change.consume()
+                            }
+                            onHoldEnd(cancel)
+                            onArmChange(false)
+                        }
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    label,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = if (armed) MaterialTheme.colorScheme.onErrorContainer
+                    else MaterialTheme.colorScheme.onSurface
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clickable(onClick = onKeyboard),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    AppIcons.Keyboard,
+                    contentDescription = L10n.t(language, "切回键盘", "切回鍵盤", "Back to keyboard"),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(22.dp)
+                )
             }
         }
     }
