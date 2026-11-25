@@ -41,6 +41,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.TextLinkStyles
+import androidx.compose.ui.text.style.TextDecoration
+import com.deepseekchat.app.WebPageActivity
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -65,11 +69,13 @@ private sealed interface MdNode {
 @Composable
 fun MarkdownText(text: String, color: Color) {
     val nodes = remember(text) { parseMarkdown(text) }
+    val ctx = LocalContext.current
+    fun md(raw: String): AnnotatedString = linkify(buildInline(raw, color), ctx)
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         nodes.forEach { node ->
             when (node) {
                 is MdNode.Heading -> Text(
-                    text = buildInline(node.text, color),
+                    text = md(node.text),
                     style = when (node.level) {
                         1 -> MaterialTheme.typography.titleLarge
                         2 -> MaterialTheme.typography.titleMedium
@@ -80,7 +86,7 @@ fun MarkdownText(text: String, color: Color) {
                 )
 
                 is MdNode.Block -> Text(
-                    text = buildInline(node.text, color),
+                    text = md(node.text),
                     style = MaterialTheme.typography.bodyMedium,
                     color = color
                 )
@@ -93,7 +99,7 @@ fun MarkdownText(text: String, color: Color) {
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        text = buildInline(node.text, color),
+                        text = md(node.text),
                         style = MaterialTheme.typography.bodyMedium,
                         color = color
                     )
@@ -107,7 +113,7 @@ fun MarkdownText(text: String, color: Color) {
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        text = buildInline(node.text, color),
+                        text = md(node.text),
                         style = MaterialTheme.typography.bodyMedium,
                         color = color
                     )
@@ -123,7 +129,7 @@ fun MarkdownText(text: String, color: Color) {
                         .padding(horizontal = 10.dp, vertical = 8.dp)
                 ) {
                     Text(
-                        text = buildInline(node.text, color),
+                        text = md(node.text),
                         style = MaterialTheme.typography.bodyMedium,
                         fontStyle = FontStyle.Italic,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -459,4 +465,42 @@ private fun fileNameFor(lang: String): String {
         else -> "txt"
     }
     return "deepchat_code." + ext
+}
+
+private val urlRegex = Regex("""https?://[^\s<>"'（）()，,。]+""")
+
+/** 把纯文本里的 http(s) 链接标成可点链接，点开用应用内浏览器 */
+private fun linkify(source: AnnotatedString, context: android.content.Context): AnnotatedString {
+    val plain = source.text
+    val matches = urlRegex.findAll(plain).toList()
+    if (matches.isEmpty()) return source
+    return buildAnnotatedString {
+        append(source)
+        matches.forEach { match ->
+            var url = match.value
+            while (url.isNotEmpty() && url.last() in listOf('.', ',', ';', ')', '）')) {
+                url = url.dropLast(1)
+            }
+            if (url.length > 8) {
+                addLink(
+                    LinkAnnotation.Url(
+                        url = url,
+                        styles = TextLinkStyles(
+                            style = SpanStyle(
+                                color = Color(0xFF4D6BFE),
+                                textDecoration = TextDecoration.Underline
+                            )
+                        ),
+                        linkInteractionListener = {
+                            runCatching {
+                                WebPageActivity.open(context, url, "网页")
+                            }
+                        }
+                    ),
+                    start = match.range.first,
+                    end = match.range.first + url.length
+                )
+            }
+        }
+    }
 }

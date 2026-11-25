@@ -10,9 +10,9 @@
 
 ### 下载
 
-最新版：**[DeepChat 1.2.0 APK](https://github.com/imsz250/DeepChat/releases/latest)**
+最新版：**[DeepChat 1.2.1 APK](https://github.com/imsz250/DeepChat/releases/latest)**
 
-历史版本见 [Releases](https://github.com/imsz250/DeepChat/releases)（1.0.3 到 1.2.0 每个版本都带 APK）。release 包使用 debug 签名，同一签名可直接覆盖升级。
+历史版本见 [Releases](https://github.com/imsz250/DeepChat/releases)（1.0.3 到 1.2.1 每个版本都带 APK）。release 包使用 debug 签名，同一签名可直接覆盖升级。
 
 ### 功能
 
@@ -23,7 +23,7 @@
 - 附件：气泡内直接渲染图片缩略图，点开是应用内图片查看器（双指缩放/双击复位）；文本附件为卡片，点开是应用内文本查看器（可选中、可复制全文）
 - 联网搜索：Bing（手机端 / 桌面端）→ 百度依次兜底，搜不到自动退回普通回答
 - 三语界面：简体中文、繁體中文（中国香港 / 中国台湾）、English（美国 / 英国）
-- 长按选择文本时使用 Material 3 风格的选择浮条（复制 / 全选图标），不跟随系统老样式
+- 长按选择文本时使用 Material 3 风格的选择浮条（复制 / 全选图标 + 溢出菜单），全屏代码页同样是自制浮条；消息里的 http(s) 链接可点开
 - 深色 / 浅色 / 跟随系统；诊断日志；对话本地保存
 
 ### 环境
@@ -57,9 +57,9 @@ A native Android third-party client for DeepSeek, built with Kotlin + Jetpack Co
 
 ### Download
 
-Latest: **[DeepChat 1.2.0 APK](https://github.com/imsz250/DeepChat/releases/latest)**
+Latest: **[DeepChat 1.2.1 APK](https://github.com/imsz250/DeepChat/releases/latest)**
 
-Older builds: [Releases](https://github.com/imsz250/DeepChat/releases) — every version from 1.0.3 to 1.2.0 ships an APK. Release builds are signed with the debug key, so they upgrade over each other directly.
+Older builds: [Releases](https://github.com/imsz250/DeepChat/releases) — every version from 1.0.3 to 1.2.1 ships an APK. Release builds are signed with the debug key, so they upgrade over each other directly.
 
 ### Features
 
@@ -70,7 +70,7 @@ Older builds: [Releases](https://github.com/imsz250/DeepChat/releases) — every
 - Attachments: inline image thumbnails opening into a built-in zoomable image viewer; text files open in a built-in text viewer (selectable, copy-all); files copied into app storage so they survive restarts
 - Web search: Bing (mobile / desktop) then Baidu as fallbacks; falls back to a plain answer when nothing comes back
 - Three UI languages: Simplified Chinese, Traditional Chinese (Hong Kong / Taiwan), English (US / UK)
-- Material 3 style text-selection toolbar (copy / select-all icons) instead of the legacy system popup
+- Material 3 text-selection toolbar (copy / select-all icons plus overflow) everywhere including the full-screen code viewer; http(s) links in messages are tappable
 - Dark / light / system theme; diagnostic log; local conversation storage
 
 ### Requirements

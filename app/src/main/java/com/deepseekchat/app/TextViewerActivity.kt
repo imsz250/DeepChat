@@ -43,6 +43,7 @@ class TextViewerActivity : ComponentActivity() {
 
         setContent {
             DeepChatTheme {
+                com.deepseekchat.app.ui.Md3TextSelectionHost {
                 Scaffold(
                     topBar = {
                         TopAppBar(
@@ -89,6 +90,7 @@ class TextViewerActivity : ComponentActivity() {
                             )
                         }
                     }
+                }
                 }
             }
         }

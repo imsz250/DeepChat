@@ -315,8 +315,53 @@ private fun plainCodeBody(code: String): String = """
       .ln{display:block;counter-increment:line}
       .ln:before{content:counter(line);display:inline-block;width:2.6em;color:#5c6675;text-align:right;padding-right:12px}
       .kw{color:#ff9d6b}.str{color:#a8d78a}.cm{color:#6c7686}.num{color:#d6b3ff}
+      .selbar{position:fixed;display:none;align-items:center;background:#2b303b;border-radius:24px;
+              padding:2px 4px;box-shadow:0 8px 22px rgba(0,0,0,.5);z-index:99}
+      .selbar button{background:transparent;border:0;color:#dbe3ec;font:15px system-ui,Roboto,sans-serif;
+              padding:10px 16px;border-radius:22px}
+      .selbar button:active{background:#3b4252}
     </style>
     <pre>${withLineNumbers(highlight(code))}</pre>
+    <div class="selbar" id="selbar">
+      <button id="btnCopy">复制</button>
+      <button id="btnAll">全选</button>
+    </div>
+    <script>
+    (function(){
+      var bar=document.getElementById('selbar');
+      var pre=document.querySelector('pre');
+      function getSel(){var s=window.getSelection();return (s&&s.toString().trim().length>0)?s:null;}
+      function place(){
+        var s=getSel();
+        if(!s){bar.style.display='none';return;}
+        var r=s.getRangeAt(0).getBoundingClientRect();
+        var w=bar.offsetWidth,h=bar.offsetHeight;
+        var x=Math.max(8,Math.min(window.innerWidth-w-8, r.left+r.width/2-w/2));
+        var y=r.top-h-10; if(y<8){y=r.bottom+10;}
+        if(y+h>window.innerHeight-8){y=window.innerHeight-h-8;}
+        bar.style.left=x+'px'; bar.style.top=y+'px'; bar.style.display='flex';
+      }
+      document.addEventListener('selectionchange',function(){setTimeout(place,50);});
+      document.addEventListener('touchend',function(){setTimeout(place,50);});
+      document.addEventListener('mousedown',function(e){
+        if(e.target.tagName==='BUTTON'){e.preventDefault();}
+      },true);
+      document.getElementById('btnCopy').addEventListener('click',function(){
+        var s=getSel(); if(!s){return;}
+        var t=s.toString();
+        var ok=false; try{ok=document.execCommand('copy');}catch(e){ok=false;}
+        if(!ok&&navigator.clipboard){navigator.clipboard.writeText(t);ok=true;}
+        var b=document.getElementById('btnCopy');
+        b.textContent=ok?'已复制':'复制失败';
+        setTimeout(function(){b.textContent='复制';},1200);
+      });
+      document.getElementById('btnAll').addEventListener('click',function(){
+        var s=window.getSelection(); var r=document.createRange();
+        r.selectNodeContents(pre); s.removeAllRanges(); s.addRange(r);
+        setTimeout(place,60);
+      });
+    })();
+    </script>
 """.trimIndent()
 
 private fun fileNameFor(lang: String): String {
