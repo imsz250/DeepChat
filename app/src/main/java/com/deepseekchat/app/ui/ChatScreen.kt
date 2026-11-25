@@ -5,6 +5,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -557,6 +558,162 @@ fun ChatScreen(vm: ChatViewModel) {
         }
 
         }
+        }
+
+        // 底部浮层：附件 + 输入框（永远贴在底部，不会被挤掉）
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+        ) {
+            if (pending.isNotEmpty()) {
+                LazyRow(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(pending) { att ->
+                        AttachmentChip(
+                            att = att,
+                            onRemove = { vm.removeAttachment(pending.indexOf(att)) }
+                        )
+                    }
+                }
+            }
+
+            Surface(color = MaterialTheme.colorScheme.surface, tonalElevation = 2.dp) {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    androidx.compose.animation.AnimatedVisibility(
+                        visible = recording,
+                        enter = fadeIn(tween(180)) + expandVertically(tween(220)),
+                        exit = fadeOut(tween(120)) + shrinkVertically(tween(160))
+                    ) {
+                        RecordingPanel(language = language, armed = voiceCancelArmed, amp = voiceAmp)
+                    }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 6.dp, end = 12.dp, top = 6.dp, bottom = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // 加号：打字模式和语音模式都在同一个位置
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clickable { showAttachSheet = true }
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    Icons.Filled.Add,
+                                    contentDescription = "添加附件",
+                                    tint = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        }
+                        Spacer(Modifier.width(8.dp))
+                        Box(modifier = Modifier.weight(1f)) {
+                            androidx.compose.animation.Crossfade(
+                                targetState = voiceMode,
+                                animationSpec = tween(180),
+                                label = "composer"
+                            ) { isVoice ->
+                                if (isVoice) {
+                                    VoiceBar(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        language = language,
+                                        status = voiceStatus,
+                                        recording = recording,
+                                        armed = voiceCancelArmed,
+                                        onArmChange = { voiceCancelArmed = it },
+                                        onKeyboard = { voiceMode = false },
+                                        onHoldStart = { onVoiceHoldStart() },
+                                        onHoldEnd = { onVoiceHoldEnd(it) },
+                                        onTick = { heavy ->
+                                            view.performHapticFeedback(
+                                                if (heavy) android.view.HapticFeedbackConstants.LONG_PRESS
+                                                else android.view.HapticFeedbackConstants.KEYBOARD_TAP
+                                            )
+                                        }
+                                    )
+                                } else {
+                                    CompositionLocalProvider(LocalTextToolbar provides selToolbar) {
+                                        OutlinedTextField(
+                                            value = input,
+                                            onValueChange = { input = it },
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .pointerInput(input) {
+                                                    // 没字（只有空格也算没字）时长按＝直接进录音；有字就走粘贴/全选
+                                                    awaitEachGesture {
+                                                        val down = awaitFirstDown(
+                                                            requireUnconsumed = false,
+                                                            pass = PointerEventPass.Initial
+                                                        )
+                                                        if (input.isNotBlank()) return@awaitEachGesture
+                                                        val startedAt = System.currentTimeMillis()
+                                                        while (true) {
+                                                            val event = awaitPointerEvent(PointerEventPass.Initial)
+                                                            val change = event.changes
+                                                                .firstOrNull { it.id == down.id }
+                                                                ?: return@awaitEachGesture
+                                                            if (!change.pressed) return@awaitEachGesture
+                                                            if ((change.position - down.position).getDistance() > 28f)
+                                                                return@awaitEachGesture
+                                                            if (System.currentTimeMillis() - startedAt > 420) {
+                                                                change.consume()
+                                                                selState.visible = false
+                                                                enterVoiceMode()
+                                                                return@awaitEachGesture
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                            placeholder = { Text(L10n.sendPlaceholder(language)) },
+                                            maxLines = 5,
+                                            shape = RoundedCornerShape(22.dp),
+                                            trailingIcon = {
+                                                IconButton(onClick = { enterVoiceMode() }) {
+                                                    Icon(
+                                                        AppIcons.Mic,
+                                                        contentDescription = L10n.t(
+                                                            language, "语音输入", "語音輸入", "Voice input"
+                                                        ),
+                                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    )
+                                                }
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        // 语音模式下只有带了附件才露出发送按钮
+                        if (!voiceMode || pending.isNotEmpty()) {
+                            Spacer(Modifier.width(6.dp))
+                            if (chat.sending) {
+                                FilledIconButton(onClick = vm::stop) {
+                                    Icon(Icons.Filled.Close, contentDescription = "停止")
+                                }
+                            } else {
+                                FilledIconButton(
+                                    onClick = {
+                                        val text = input
+                                        input = ""
+                                        keyboard?.hide()
+                                        vm.send(text)
+                                    },
+                                    enabled = input.isNotBlank() || pending.isNotEmpty()
+                                ) {
+                                    Icon(Icons.Filled.Send, contentDescription = "发送")
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         // 浮条可见时铺一层透明的“点一下就收”，点浮条外面任意位置都能关掉（不抢焦点，键盘不会收）

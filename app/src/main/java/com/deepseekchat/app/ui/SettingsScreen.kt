@@ -224,9 +224,9 @@ fun SettingsScreen(vm: ChatViewModel) {
         Text(
             text = L10n.t(
                 language,
-                "本地离线：模型已经打进 APK（中文小模型，42MB），装好就能断网识别，不花钱、不走服务器。在线接口：填一个 OpenAI 兼容的语音接口，识别更准、中英混说更好，默认走硅基流动（cloud.siliconflow.cn 有免费额度）。",
-                "本地離線：模型已打進 APK（中文小模型，42MB），裝好就能斷網識別，不收費、不走伺服器。線上介面：填一個 OpenAI 相容的語音介面，識別更準、中英混說更好，預設走硅基流動（cloud.siliconflow.cn 有免費額度）。",
-                "On-device: a small Chinese model ships inside the APK (42 MB), so recognition works offline, free, with no server. Online API: any OpenAI-compatible transcription endpoint - more accurate on mixed Chinese/English, defaults to SiliconFlow (free tier at cloud.siliconflow.cn)."
+                "本地离线：中英双语模型（sherpa-onnx，约 190MB）已经打进 APK，中英混说走同一条链路，断网可用、不花钱、不走服务器。在线接口：填一个 OpenAI 兼容的语音接口（默认硅基流动 SenseVoice，免费）。",
+                "本地離線：中英雙語模型（sherpa-onnx，約 190MB）已打進 APK，中英混說走同一條鏈路，斷網可用、不收費、不走伺服器。線上介面：填一個 OpenAI 相容的語音介面（預設硅基流動 SenseVoice，免費）。",
+                "On-device: a Chinese + English bilingual model (sherpa-onnx, ~190 MB) ships inside the APK, so mixed zh/en recognition works offline and free with no server. Online API: any OpenAI-compatible transcription endpoint (SiliconFlow SenseVoice by default, free)."
             ),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
