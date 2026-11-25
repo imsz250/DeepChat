@@ -1,18 +1,12 @@
 package com.deepseekchat.app.ui
 
-import androidx.compose.foundation.layout.Box as CBox
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -85,8 +79,6 @@ fun Md3TextSelectionHost(language: String = "zh-CN", content: @Composable () -> 
 @Composable
 fun Md3SelectionToolbar(state: Md3TextToolbarState, copyLabel: String, selectAllLabel: String) {
     if (!state.visible) return
-    var overflow by remember { mutableStateOf(false) }
-
     // Popup 的 offset 是相对“父布局”的，这里按窗口坐标换算，避免第二次长按时浮条跑到别处
     val anchorRect = state.rect
     val provider = remember(anchorRect) {
@@ -98,23 +90,21 @@ fun Md3SelectionToolbar(state: Md3TextToolbarState, copyLabel: String, selectAll
                 popupContentSize: IntSize
             ): IntOffset {
                 val rect = anchorRect
+                @Suppress("UNUSED_VARIABLE") val unusedAnchor = anchorBounds
                 val gap = 10
                 var x = (rect.center.x - popupContentSize.width / 2f).toInt()
                 x = x.coerceIn(8, (windowSize.width - popupContentSize.width - 8).coerceAtLeast(8))
                 var y = (rect.top - popupContentSize.height - gap).toInt()
                 if (y < 8) y = (rect.bottom + gap).toInt()
                 y = y.coerceIn(8, (windowSize.height - popupContentSize.height - 8).coerceAtLeast(8))
-                return IntOffset(x - anchorBounds.left, y - anchorBounds.top)
+                return IntOffset(x, y)
             }
         }
     }
 
     Popup(
         popupPositionProvider = provider,
-        onDismissRequest = {
-            overflow = false
-            state.visible = false
-        },
+        onDismissRequest = { state.visible = false },
         properties = PopupProperties(focusable = false)
     ) {
         Surface(
@@ -123,45 +113,21 @@ fun Md3SelectionToolbar(state: Md3TextToolbarState, copyLabel: String, selectAll
             tonalElevation = 3.dp,
             shadowElevation = 8.dp
         ) {
-            Row(modifier = Modifier.padding(horizontal = 2.dp)) {
-                IconButton(
+            Row(modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)) {
+                TextButton(
                     onClick = {
                         state.onCopy?.invoke()
                         state.visible = false
                     },
                     enabled = state.onCopy != null
                 ) {
-                    Icon(AppIcons.Copy, contentDescription = copyLabel)
+                    Text(copyLabel, style = MaterialTheme.typography.labelLarge)
                 }
-                IconButton(
+                TextButton(
                     onClick = { state.onSelectAll?.invoke() },
                     enabled = state.onSelectAll != null
                 ) {
-                    Icon(AppIcons.SelectAll, contentDescription = selectAllLabel)
-                }
-                CBox {
-                    IconButton(onClick = { overflow = true }) {
-                        Icon(Icons.Filled.MoreVert, contentDescription = "更多")
-                    }
-                    DropdownMenu(expanded = overflow, onDismissRequest = { overflow = false }) {
-                        DropdownMenuItem(
-                            text = { Text(copyLabel) },
-                            onClick = {
-                                state.onCopy?.invoke()
-                                overflow = false
-                                state.visible = false
-                            },
-                            enabled = state.onCopy != null
-                        )
-                        DropdownMenuItem(
-                            text = { Text(selectAllLabel) },
-                            onClick = {
-                                state.onSelectAll?.invoke()
-                                overflow = false
-                            },
-                            enabled = state.onSelectAll != null
-                        )
-                    }
+                    Text(selectAllLabel, style = MaterialTheme.typography.labelLarge)
                 }
             }
         }

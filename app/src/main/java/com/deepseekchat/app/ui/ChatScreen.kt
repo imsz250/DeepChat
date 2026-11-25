@@ -76,6 +76,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalTextToolbar
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -159,7 +160,27 @@ fun ChatScreen(vm: ChatViewModel) {
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    val selState = remember { Md3TextToolbarState() }
+    val selToolbar = remember(selState) { Md3TextToolbar(selState) }
+    val focus = LocalFocusManager.current
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .pointerInput(Unit) {
+                awaitPointerEventScope {
+                    while (true) {
+                        val event = awaitPointerEvent(PointerEventPass.Initial)
+                        // 任何触摸（滑动切页、点输入框、点按钮）先收掉选择浮条，避免残留导致掉帧
+                        if (event.changes.any { it.pressed } && selState.visible) {
+                            selState.visible = false
+                            focus.clearFocus()
+                        }
+                    }
+                }
+            }
+    ) {
+        CompositionLocalProvider(LocalTextToolbar provides selToolbar) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -311,6 +332,13 @@ fun ChatScreen(vm: ChatViewModel) {
         }
 
         }
+        }
+
+        Md3SelectionToolbar(
+            state = selState,
+            copyLabel = L10n.t(language, "复制", "複製", "Copy"),
+            selectAllLabel = L10n.t(language, "全选", "全選", "Select all")
+        )
 
         if (!autoFollow && chat.messages.isNotEmpty()) {
             Surface(
@@ -763,19 +791,8 @@ private fun MessageBubble(
                         Text("（没有内容）", color = textColor, style = MaterialTheme.typography.bodyMedium)
                     }
                 } else {
-                    val toolbarState = remember(message.id) { Md3TextToolbarState() }
-                    val md3Toolbar = remember(toolbarState) { Md3TextToolbar(toolbarState) }
-                    Box {
-                        CompositionLocalProvider(LocalTextToolbar provides md3Toolbar) {
-                            SelectionContainer {
-                                MarkdownText(message.content, textColor)
-                            }
-                        }
-                        Md3SelectionToolbar(
-                            state = toolbarState,
-                            copyLabel = L10n.t(language, "复制", "複製", "Copy"),
-                            selectAllLabel = L10n.t(language, "全选", "全選", "Select all")
-                        )
+                    SelectionContainer {
+                        MarkdownText(message.content, textColor)
                     }
                 }
 
