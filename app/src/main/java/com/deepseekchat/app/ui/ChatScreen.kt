@@ -52,6 +52,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.rememberCoroutineScope
@@ -73,6 +74,7 @@ import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalTextToolbar
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontFamily
@@ -761,8 +763,19 @@ private fun MessageBubble(
                         Text("（没有内容）", color = textColor, style = MaterialTheme.typography.bodyMedium)
                     }
                 } else {
-                    SelectionContainer {
-                        MarkdownText(message.content, textColor)
+                    val toolbarState = remember(message.id) { Md3TextToolbarState() }
+                    val md3Toolbar = remember(toolbarState) { Md3TextToolbar(toolbarState) }
+                    Box {
+                        CompositionLocalProvider(LocalTextToolbar provides md3Toolbar) {
+                            SelectionContainer {
+                                MarkdownText(message.content, textColor)
+                            }
+                        }
+                        Md3SelectionToolbar(
+                            state = toolbarState,
+                            copyLabel = L10n.t(language, "复制", "複製", "Copy"),
+                            selectAllLabel = L10n.t(language, "全选", "全選", "Select all")
+                        )
                     }
                 }
 

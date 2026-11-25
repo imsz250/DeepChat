@@ -188,4 +188,65 @@ object AppIcons {
             }
         }.build()
     }
+
+    val Copy: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "Copy",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f
+        ).apply {
+            path(fill = SolidColor(Color.White)) {
+                moveTo(16f, 1f)
+                horizontalLineTo(9f)
+                curveTo(7.9f, 1f, 7f, 1.9f, 7f, 3f)
+                verticalLineTo(15f)
+                curveTo(7f, 16.1f, 7.9f, 17f, 9f, 17f)
+                horizontalLineTo(19f)
+                curveTo(20.1f, 17f, 21f, 16.1f, 21f, 15f)
+                verticalLineTo(3f)
+                curveTo(21f, 1.9f, 20.1f, 1f, 19f, 1f)
+                close()
+                moveTo(19f, 15f)
+                horizontalLineTo(9f)
+                verticalLineTo(3f)
+                horizontalLineTo(19f)
+                close()
+                moveTo(4f, 5f)
+                verticalLineTo(21f)
+                curveTo(4f, 22.1f, 4.9f, 23f, 6f, 23f)
+                horizontalLineTo(17f)
+                verticalLineTo(21f)
+                horizontalLineTo(6f)
+                verticalLineTo(5f)
+                close()
+            }
+        }.build()
+    }
+
+    val SelectAll: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "SelectAll",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f
+        ).apply {
+            path(fill = SolidColor(Color.White)) {
+                // 四个角括号
+                moveTo(3f, 3f); lineTo(9f, 3f); lineTo(9f, 5f); lineTo(3f, 5f); close()
+                moveTo(3f, 3f); lineTo(5f, 3f); lineTo(5f, 9f); lineTo(3f, 9f); close()
+                moveTo(15f, 3f); lineTo(21f, 3f); lineTo(21f, 5f); lineTo(15f, 5f); close()
+                moveTo(19f, 3f); lineTo(21f, 3f); lineTo(21f, 9f); lineTo(19f, 9f); close()
+                moveTo(3f, 15f); lineTo(9f, 15f); lineTo(9f, 17f); lineTo(3f, 17f); close()
+                moveTo(3f, 19f); lineTo(5f, 19f); lineTo(5f, 21f); lineTo(3f, 21f); close()
+                moveTo(15f, 19f); lineTo(21f, 19f); lineTo(21f, 21f); lineTo(15f, 21f); close()
+                moveTo(19f, 15f); lineTo(21f, 15f); lineTo(21f, 19f); lineTo(19f, 19f); close()
+                // 中间的对勾
+                moveTo(8.8f, 12.5f); lineTo(11.3f, 15f); lineTo(16.3f, 10f)
+                lineTo(14.9f, 8.6f); lineTo(11.3f, 12.2f); lineTo(10.2f, 11.1f); close()
+            }
+        }.build()
+    }
 }
