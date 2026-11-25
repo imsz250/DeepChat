@@ -90,6 +90,13 @@ object LocalAsr {
 
     /** 常见识别错字 → 正确写法（同音/近音、品牌名、技术词） */
     private val fixes = listOf(
+        "the seek" to "DeepSeek",
+        "de seek" to "DeepSeek",
+        "deep sick" to "DeepSeek",
+        "deep seek" to "DeepSeek",
+        "the seek" to "DeepSeek",
+        "deepchat" to "DeepChat",
+        "deep chat" to "DeepChat",
         "弗莱仕" to "Flex",
         "弗莱克斯" to "Flex",
         "福莱克斯" to "Flex",
@@ -125,8 +132,12 @@ object LocalAsr {
         repeat(3) {
             t = t.replace(Regex("(?i)\\b([a-z])\\s+([a-z])\\b"), "$1$2")
         }
-        // 错字/同音字修正
-        fixes.forEach { (wrong, right) -> if (wrong != right) t = t.replace(wrong, right) }
+        // 错字/同音字修正（英文品牌名忽略大小写）
+        fixes.forEach { (wrong, right) ->
+            if (wrong != right) {
+                t = t.replace(Regex(Regex.escape(wrong), RegexOption.IGNORE_CASE), right)
+            }
+        }
         return t.trim()
     }
 
