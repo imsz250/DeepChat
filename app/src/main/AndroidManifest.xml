@@ -41,6 +41,18 @@
             android:theme="@style/Theme.DeepChat" />
 
         <activity
+            android:name=".ImageViewerActivity"
+            android:exported="false"
+            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:theme="@style/Theme.DeepChat" />
+
+        <activity
+            android:name=".TextViewerActivity"
+            android:exported="false"
+            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:theme="@style/Theme.DeepChat" />
+
+        <activity
             android:name=".WebPageActivity"
             android:exported="false"
             android:configChanges="orientation|screenSize|keyboardHidden"

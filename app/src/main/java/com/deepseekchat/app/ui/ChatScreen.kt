@@ -658,20 +658,9 @@ private fun MessageBubble(
                                         .heightIn(min = 80.dp, max = 220.dp)
                                         .clip(RoundedCornerShape(12.dp))
                                         .clickable {
-                                            runCatching {
-                                                val uri = FileProvider.getUriForFile(
-                                                    ctx, ctx.packageName + ".fileprovider", File(att.path ?: return@clickable)
-                                                )
-                                                ctx.startActivity(
-                                                    Intent(Intent.ACTION_VIEW).apply {
-                                                        setDataAndType(uri, "image/*")
-                                                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                                    }
-                                                )
-                                            }.onFailure {
-                                                Toast.makeText(ctx, "这张图打不开了", Toast.LENGTH_SHORT).show()
-                                            }
+                                            com.deepseekchat.app.ImageViewerActivity.open(
+                                                ctx, att.path, att.imageBase64, att.name
+                                            )
                                         }
                                 )
                                 Text(
@@ -692,20 +681,43 @@ private fun MessageBubble(
                             }
                         }
                     } else {
-                        Column(modifier = Modifier.padding(top = 4.dp)) {
-                            Text(
-                                "📄 " + att.name + "（" + att.chars + " 字）",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = if (isUser) MaterialTheme.colorScheme.onPrimaryContainer
-                                else MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            if (!att.text.isNullOrBlank()) {
+                        val ctx = LocalContext.current
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = if (isUser) MaterialTheme.colorScheme.primary.copy(alpha = 0.20f)
+                            else MaterialTheme.colorScheme.surfaceContainerHighest,
+                            modifier = Modifier
+                                .padding(top = 4.dp)
+                                .widthIn(max = 260.dp)
+                                .clickable {
+                                    com.deepseekchat.app.TextViewerActivity.open(
+                                        ctx, att.name, att.text.orEmpty()
+                                    )
+                                }
+                        ) {
+                            Column(modifier = Modifier.padding(10.dp)) {
                                 Text(
-                                    att.text.take(160),
-                                    style = MaterialTheme.typography.bodySmall,
+                                    "📄 " + att.name,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.SemiBold,
                                     color = if (isUser) MaterialTheme.colorScheme.onPrimaryContainer
+                                    else MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    att.chars.toString() + " 字 · 点开查看",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = if (isUser) MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.75f)
                                     else MaterialTheme.colorScheme.onSurfaceVariant
                                 )
+                                if (!att.text.isNullOrBlank()) {
+                                    Text(
+                                        att.text.take(90),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = if (isUser) MaterialTheme.colorScheme.onPrimaryContainer
+                                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.padding(top = 4.dp)
+                                    )
+                                }
                             }
                         }
                     }
