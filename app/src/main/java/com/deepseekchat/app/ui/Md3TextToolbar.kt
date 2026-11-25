@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupPositionProvider
@@ -81,7 +82,8 @@ fun Md3SelectionToolbar(state: Md3TextToolbarState, copyLabel: String, selectAll
     if (!state.visible) return
     // Popup 的 offset 是相对“父布局”的，这里按窗口坐标换算，避免第二次长按时浮条跑到别处
     val anchorRect = state.rect
-    val provider = remember(anchorRect) {
+    val bottomReserve = with(LocalDensity.current) { 132.dp.toPx() }
+    val provider = remember(anchorRect, bottomReserve) {
         object : PopupPositionProvider {
             override fun calculatePosition(
                 anchorBounds: IntRect,
@@ -96,7 +98,9 @@ fun Md3SelectionToolbar(state: Md3TextToolbarState, copyLabel: String, selectAll
                 x = x.coerceIn(8, (windowSize.width - popupContentSize.width - 8).coerceAtLeast(8))
                 var y = (rect.top - popupContentSize.height - gap).toInt()
                 if (y < 8) y = (rect.bottom + gap).toInt()
-                y = y.coerceIn(8, (windowSize.height - popupContentSize.height - 8).coerceAtLeast(8))
+                // 上半屏放不下时才放选区下方，但不能压住底部输入区，否则浮条会挡住发送/麦克风按钮
+                val safeBottom = (windowSize.height - bottomReserve).toInt()
+                y = y.coerceIn(8, (safeBottom - popupContentSize.height).coerceAtLeast(8))
                 return IntOffset(x, y)
             }
         }
@@ -104,8 +108,11 @@ fun Md3SelectionToolbar(state: Md3TextToolbarState, copyLabel: String, selectAll
 
     Popup(
         popupPositionProvider = provider,
-        onDismissRequest = { state.visible = false },
-        properties = PopupProperties(focusable = false)
+        onDismissRequest = {
+            // 点浮条外面任意空白处就收掉
+            state.visible = false
+        },
+        properties = PopupProperties(focusable = true)
     ) {
         Surface(
             shape = RoundedCornerShape(24.dp),

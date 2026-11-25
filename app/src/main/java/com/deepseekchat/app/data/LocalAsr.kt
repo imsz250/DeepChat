@@ -56,6 +56,15 @@ object LocalAsr {
         return created
     }
 
+    /** Vosk 会按词切空格输出中文，这里把汉字之间的空格去掉，只保留英文词之间的空格。 */
+    private fun cleanUp(raw: String): String {
+        var t = raw.replace(Regex("\\s+"), " ").trim()
+        val han = "\\u4e00-\\u9fff\\u3000-\\u303f\\uff00-\\uffef"
+        t = t.replace(Regex("([$han])\\s+"), "$1")
+        t = t.replace(Regex("\\s+([$han])"), "$1")
+        return t.trim()
+    }
+
     /** pcm：16kHz 单声道 16bit 裸 PCM。 */
     fun recognize(ctx: Context, pcm: ByteArray): String? {
         val m = modelOf(ctx) ?: return null
@@ -63,7 +72,7 @@ object LocalAsr {
             val rec = Recognizer(m, 16000.0f)
             try {
                 rec.acceptWaveForm(pcm, pcm.size)
-                JSONObject(rec.finalResult).optString("text").trim()
+                cleanUp(JSONObject(rec.finalResult).optString("text"))
             } finally {
                 runCatching { rec.close() }
             }

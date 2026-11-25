@@ -65,6 +65,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.draw.clip
@@ -168,8 +169,8 @@ fun ChatScreen(vm: ChatViewModel) {
                 runCatching { file?.readBytes() ?: ByteArray(0) }.getOrDefault(ByteArray(0))
             }
             runCatching { file?.delete() }
-            if (pcm.size < 3200) {
-                vm.notify("太短了，按一下麦克风说一句再点一下结束")
+            if (pcm.size < 6400) {
+                vm.notify("按住麦克风再说一句，说完再松手")
                 return@launch
             }
             val mode = vm.asrMode.value
@@ -195,9 +196,7 @@ fun ChatScreen(vm: ChatViewModel) {
     }
 
     doStartRecord = {
-        if (recording) {
-            stopVoiceRecord()
-        } else {
+        if (!recording) {
             val minBuf = android.media.AudioRecord.getMinBufferSize(
                 16000,
                 android.media.AudioFormat.CHANNEL_IN_MONO,
@@ -205,7 +204,7 @@ fun ChatScreen(vm: ChatViewModel) {
             )
             val record = runCatching {
                 android.media.AudioRecord(
-                    android.media.MediaRecorder.AudioSource.MIC,
+                    android.media.MediaRecorder.AudioSource.VOICE_RECOGNITION,
                     16000,
                     android.media.AudioFormat.CHANNEL_IN_MONO,
                     android.media.AudioFormat.ENCODING_PCM_16BIT,
@@ -232,7 +231,7 @@ fun ChatScreen(vm: ChatViewModel) {
                     }
                     runCatching { out.close() }
                 }.also { it.start() }
-                vm.notify("开始录音，点一下麦克风结束")
+                vm.notify("正在录音，说完松手")
             }
         }
     }
@@ -249,7 +248,7 @@ fun ChatScreen(vm: ChatViewModel) {
             )
         }
 
-    fun onMicClick() {
+    fun onMicPress() {
         if (vm.asrMode.value == "online" && vm.asrKey.value.isBlank()) {
             runCatching { voiceLauncher.launch(systemVoiceIntent()) }
                 .onFailure { vm.notify("在线模式缺 Key：去设置里填 Key，或把识别方式改成本地离线") }
@@ -263,6 +262,10 @@ fun ChatScreen(vm: ChatViewModel) {
         } else {
             doStartRecord()
         }
+    }
+
+    fun onMicRelease() {
+        if (recording) stopVoiceRecord()
     }
 
     fun startVoice() {
@@ -574,14 +577,28 @@ fun ChatScreen(vm: ChatViewModel) {
                         maxLines = 5,
                         shape = RoundedCornerShape(22.dp),
                         trailingIcon = {
-                            IconButton(onClick = { onMicClick() }) {
+                            // 按住说话、松手结束（对标微信/豆包的语音输入）
+                            Box(
+                                modifier = Modifier
+                                    .size(44.dp)
+                                    .pointerInput(recording) {
+                                        detectTapGestures(
+                                            onPress = {
+                                                onMicPress()
+                                                tryAwaitRelease()
+                                                onMicRelease()
+                                            }
+                                        )
+                                    },
+                                contentAlignment = Alignment.Center
+                            ) {
                                 Icon(
                                     AppIcons.Mic,
                                     contentDescription = L10n.t(
                                         language,
-                                        if (recording) "正在录音，点一下结束" else "语音输入",
-                                        if (recording) "正在錄音，點一下結束" else "語音輸入",
-                                        if (recording) "Recording, tap to stop" else "Voice input"
+                                        if (recording) "正在录音，松手结束" else "按住说话",
+                                        if (recording) "正在錄音，放手結束" else "按住說話",
+                                        if (recording) "Recording, release to stop" else "Hold to talk"
                                     ),
                                     tint = if (recording) MaterialTheme.colorScheme.error
                                     else MaterialTheme.colorScheme.onSurfaceVariant

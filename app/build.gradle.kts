@@ -12,8 +12,8 @@ android {
         applicationId = "com.deepseekchat.app"
         minSdk = 26
         targetSdk = 34
-        versionCode = 28
-        versionName = "1.2.7"
+        versionCode = 29
+        versionName = "1.2.8"
     }
 
     buildFeatures {
