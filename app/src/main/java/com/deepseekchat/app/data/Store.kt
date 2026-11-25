@@ -73,6 +73,14 @@ class AppPrefs(context: Context) {
         _asrKey.value = v
     }
 
+    private val _asrMode = MutableStateFlow(prefs.getString(KEY_ASR_MODE, "local") ?: "local")
+    val asrMode: StateFlow<String> = _asrMode.asStateFlow()
+
+    fun setAsrMode(v: String) {
+        prefs.edit().putString(KEY_ASR_MODE, v).apply()
+        _asrMode.value = v
+    }
+
     private val _asrModel = MutableStateFlow(
         prefs.getString(KEY_ASR_MODEL, "FunAudioLLM/SenseVoiceSmall").orEmpty()
     )
@@ -165,6 +173,7 @@ class AppPrefs(context: Context) {
         const val KEY_ASR_BASE = "asr_base"
         const val KEY_ASR_KEY = "asr_key"
         const val KEY_ASR_MODEL = "asr_model"
+        const val KEY_ASR_MODE = "asr_mode"
     }
 }
 

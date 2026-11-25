@@ -12,8 +12,8 @@ android {
         applicationId = "com.deepseekchat.app"
         minSdk = 26
         targetSdk = 34
-        versionCode = 27
-        versionName = "1.2.6"
+        versionCode = 28
+        versionName = "1.2.7"
     }
 
     buildFeatures {
@@ -44,6 +44,9 @@ android {
         resources {
             excludes += setOf("/META-INF/{AL2.0,LGPL2.1}", "META-INF/*.kotlin_module")
         }
+        jniLibs {
+            useLegacyPackaging = true
+        }
     }
 }
 
@@ -61,5 +64,6 @@ dependencies {
     implementation("androidx.compose.foundation:foundation")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
+    implementation("com.alphacephei:vosk-android:0.3.47")
     debugImplementation("androidx.compose.ui:ui-tooling")
 }

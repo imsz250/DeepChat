@@ -1,6 +1,7 @@
 package com.deepseekchat.app.ui
 
 import android.os.Build
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -17,6 +18,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Button
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -204,13 +206,27 @@ fun SettingsScreen(vm: ChatViewModel) {
 
 
         Spacer(Modifier.height(18.dp))
-        SectionHeader(L10n.t(language,"语音识别（在线）","語音識別（線上）","Speech recognition (online)"))
+        SectionHeader(L10n.t(language,"语音识别","語音識別","Speech recognition"))
+        val asrMode by vm.asrMode.collectAsStateWithLifecycle()
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FilterChip(
+                selected = asrMode != "online",
+                onClick = { vm.setAsrMode("local"); vm.notify("已切换：本地离线识别") },
+                label = { Text(L10n.t(language,"本地离线（内置）","本地離線（內建）","On-device")) }
+            )
+            FilterChip(
+                selected = asrMode == "online",
+                onClick = { vm.setAsrMode("online"); vm.notify("已切换：在线识别接口") },
+                label = { Text(L10n.t(language,"在线接口","線上介面","Online API")) }
+            )
+        }
+        Spacer(Modifier.height(6.dp))
         Text(
             text = L10n.t(
                 language,
-                "填一个 OpenAI 兼容的语音接口就能用内置录音识别，中英混说都行，不依赖手机自带的语音服务。默认走硅基流动（key 在 cloud.siliconflow.cn 申请，有免费额度）。留空则退回系统识别。",
-                "填一個 OpenAI 相容的語音介面就能用內建錄音識別，中英混說都行，不依賴手機自帶的語音服務。預設走硅基流動（key 在 cloud.siliconflow.cn 申請，有免費額度）。留空則退回系統識別。",
-                "Point it at any OpenAI-compatible transcription API and the built-in recorder works without the phone's speech service, Chinese and English mixed. Defaults to SiliconFlow (get a free-tier key at cloud.siliconflow.cn). Leave the key empty to fall back to the system recognizer."
+                "本地离线：模型已经打进 APK（中文小模型，42MB），装好就能断网识别，不花钱、不走服务器。在线接口：填一个 OpenAI 兼容的语音接口，识别更准、中英混说更好，默认走硅基流动（cloud.siliconflow.cn 有免费额度）。",
+                "本地離線：模型已打進 APK（中文小模型，42MB），裝好就能斷網識別，不收費、不走伺服器。線上介面：填一個 OpenAI 相容的語音介面，識別更準、中英混說更好，預設走硅基流動（cloud.siliconflow.cn 有免費額度）。",
+                "On-device: a small Chinese model ships inside the APK (42 MB), so recognition works offline, free, with no server. Online API: any OpenAI-compatible transcription endpoint - more accurate on mixed Chinese/English, defaults to SiliconFlow (free tier at cloud.siliconflow.cn)."
             ),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant

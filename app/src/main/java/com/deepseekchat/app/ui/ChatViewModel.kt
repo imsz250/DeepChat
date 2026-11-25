@@ -120,10 +120,12 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
     val asrBase: StateFlow<String> = prefs.asrBase
     val asrKey: StateFlow<String> = prefs.asrKey
     val asrModel: StateFlow<String> = prefs.asrModel
+    val asrMode: StateFlow<String> = prefs.asrMode
 
     fun setAsrBase(v: String) = prefs.setAsrBase(v)
     fun setAsrKey(v: String) = prefs.setAsrKey(v)
     fun setAsrModel(v: String) = prefs.setAsrModel(v)
+    fun setAsrMode(v: String) = prefs.setAsrMode(v)
 
     fun setApiKey(v: String) = prefs.setApiKey(v)
 

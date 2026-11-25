@@ -85,6 +85,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.deepseekchat.app.data.AsrClient
+import com.deepseekchat.app.data.LocalAsr
 import androidx.core.content.FileProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.deepseekchat.app.data.Attachment
@@ -171,13 +172,22 @@ fun ChatScreen(vm: ChatViewModel) {
                 vm.notify("太短了，按一下麦克风说一句再点一下结束")
                 return@launch
             }
-            vm.notify("正在识别…")
-            val wav = AsrClient.pcmToWav(pcm)
+            val mode = vm.asrMode.value
+            vm.notify(if (mode == "online") "正在识别…" else "正在本地识别…")
             val said = withContext(Dispatchers.IO) {
-                AsrClient.transcribe(vm.asrBase.value, vm.asrKey.value, vm.asrModel.value, wav)
+                if (mode == "online") {
+                    AsrClient.transcribe(
+                        vm.asrBase.value, vm.asrKey.value, vm.asrModel.value, AsrClient.pcmToWav(pcm)
+                    )
+                } else {
+                    LocalAsr.recognize(context, pcm)
+                }
             }
             if (said.isNullOrBlank()) {
-                vm.notify("识别失败：去设置里检查「语音识别」的接口地址和 Key")
+                vm.notify(
+                    if (mode == "online") "识别失败：去设置里检查「语音识别」的接口地址和 Key"
+                    else "本地识别没出结果，再说慢一点长一点，或在设置里切到在线识别"
+                )
             } else {
                 input = if (input.isBlank()) said else input + " " + said
             }
@@ -205,6 +215,9 @@ fun ChatScreen(vm: ChatViewModel) {
             if (record == null || record.state != android.media.AudioRecord.STATE_INITIALIZED) {
                 vm.notify("麦克风打不开（可能被别的 App 占着）")
             } else {
+                if (vm.asrMode.value != "online") {
+                    scope.launch(Dispatchers.IO) { runCatching { LocalAsr.installIfNeeded(context) } }
+                }
                 val file = File(context.cacheDir, "voice_" + System.currentTimeMillis() + ".pcm")
                 val out = file.outputStream()
                 recorderRef = record
@@ -237,9 +250,9 @@ fun ChatScreen(vm: ChatViewModel) {
         }
 
     fun onMicClick() {
-        if (vm.asrKey.value.isBlank()) {
+        if (vm.asrMode.value == "online" && vm.asrKey.value.isBlank()) {
             runCatching { voiceLauncher.launch(systemVoiceIntent()) }
-                .onFailure { vm.notify("先去设置里填「语音识别」的 Key，或装个语音服务") }
+                .onFailure { vm.notify("在线模式缺 Key：去设置里填 Key，或把识别方式改成本地离线") }
             return
         }
         val granted = androidx.core.content.ContextCompat.checkSelfPermission(
