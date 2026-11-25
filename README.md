@@ -2,7 +2,6 @@
 
 **中文** | [English](#english)
 
-
 ---
 
 ## 中文
@@ -53,7 +52,6 @@ API Key 只保存在本机应用私有目录，**不写进源码、不上传仓�
 ---
 
 ## English
-
 
 A native Android third-party client for DeepSeek, built with Kotlin + Jetpack Compose + Material 3. Plug in your own DeepSeek API key and talk to the official API directly — no proxy, no relay.
 
