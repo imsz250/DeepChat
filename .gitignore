@@ -1,8 +1,8 @@
-*.iml
-.gradle/
+# 大模型与运行时 AAR 不进仓库（GitHub 单文件 100MB 限制）
+app/src/main/assets/asr/
+app/src/main/assets/*.zip
+app/libs/*.aar
 build/
-app/build/
-.kotlin/
-.idea/
+.gradle/
 local.properties
-*.log
+*.apk

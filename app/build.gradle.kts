@@ -12,8 +12,18 @@ android {
         applicationId = "com.deepseekchat.app"
         minSdk = 26
         targetSdk = 34
-        versionCode = 34
-        versionName = "1.3.3"
+        versionCode = 35
+        versionName = "1.3.4"
+
+        // 只留两种 ARM ABI，砍掉 x86 省体积
+        ndk {
+            abiFilters += listOf("arm64-v8a")
+        }
+    }
+
+    androidResources {
+        // onnx 别再压缩一遍，装完直接读
+        noCompress += listOf("onnx", "txt")
     }
 
     buildFeatures {
@@ -66,6 +76,6 @@ dependencies {
     implementation("androidx.compose.foundation:foundation")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
-    implementation("com.alphacephei:vosk-android:0.3.47")
+    implementation(files("libs/sherpa-onnx.aar"))
     debugImplementation("androidx.compose.ui:ui-tooling")
 }

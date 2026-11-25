@@ -1,92 +1,77 @@
 package com.deepseekchat.app.data
 
 import android.content.Context
-import org.json.JSONObject
-import org.vosk.Model
-import org.vosk.Recognizer
-import java.io.File
-import java.util.zip.ZipInputStream
+import com.k2fsa.sherpa.onnx.FeatureConfig
+import com.k2fsa.sherpa.onnx.OnlineModelConfig
+import com.k2fsa.sherpa.onnx.OnlineRecognizer
+import com.k2fsa.sherpa.onnx.OnlineRecognizerConfig
+import com.k2fsa.sherpa.onnx.OnlineTransducerModelConfig
 
 /**
- * 离线语音识别（Vosk，模型随 offline 包内置）。
- * 同时装了中文和英文两个小模型：同一段录音两个都跑一遍，谁的平均置信度高用谁，
- * 这样「MD」这种英文词不会被中文模型硬拆成「儿木D儿」。
+ * 离线语音识别：sherpa-onnx + 中英双语 streaming zipformer（k2-fsa 训练、国产开源引擎）。
+ * 中英混说一条链路，不再出现「英文词被中文模型硬拆」的问题。
+ * 模型随 APK 内置在 assets/asr 下，不联网、不收钱。
  */
 object LocalAsr {
-    private data class Pack(val asset: String, val dir: String)
+    @Volatile
+    private var recognizer: OnlineRecognizer? = null
 
-    private val packs = listOf(
-        Pack("vosk-model-small-cn.zip", "asr-model/vosk-model-small-cn-0.22"),
-        Pack("vosk-model-small-en.zip", "asr-model/vosk-model-small-en-us-0.15")
-    )
+    private fun engine(ctx: Context): OnlineRecognizer? {
+        recognizer?.let { return it }
+        return synchronized(this) {
+            recognizer?.let { return it }
+            runCatching {
+                val config = OnlineRecognizerConfig(
+                    featConfig = FeatureConfig(sampleRate = 16000, featureDim = 80),
+                    modelConfig = OnlineModelConfig(
+                        transducer = OnlineTransducerModelConfig(
+                            encoder = "asr/encoder.onnx",
+                            decoder = "asr/decoder.onnx",
+                            joiner = "asr/joiner.onnx"
+                        ),
+                        tokens = "asr/tokens.txt",
+                        numThreads = 2,
+                        modelType = "zipformer"
+                    ),
+                    decodingMethod = "greedy_search",
+                    enableEndpoint = false
+                )
+                OnlineRecognizer(ctx.assets, config).also { recognizer = it }
+            }.getOrNull()
+        }
+    }
 
-    private val models = HashMap<String, Model>()
+    fun isReady(ctx: Context): Boolean = engine(ctx) != null
 
-    private fun dirOf(ctx: Context, pack: Pack) = File(ctx.filesDir, pack.dir)
-
-    fun isReady(ctx: Context): Boolean = packs.any { dirOf(ctx, it).exists() }
-
-    private fun unzip(ctx: Context, pack: Pack): Boolean = runCatching {
-        val root = File(ctx.filesDir, "asr-model")
-        root.mkdirs()
-        ctx.assets.open(pack.asset).use { input ->
-            ZipInputStream(input).use { zin ->
-                var entry = zin.nextEntry
-                while (entry != null) {
-                    val out = File(root, entry.name)
-                    if (entry.isDirectory) {
-                        out.mkdirs()
-                    } else {
-                        out.parentFile?.mkdirs()
-                        out.outputStream().use { zin.copyTo(it) }
+    /** pcm：16kHz 单声道 16bit 裸 PCM。 */
+    fun recognize(ctx: Context, pcm: ByteArray): String? {
+        val rec = engine(ctx) ?: return null
+        val samples = FloatArray(pcm.size / 2) { i ->
+            val v = (pcm[i * 2 + 1].toInt() shl 8) or (pcm[i * 2].toInt() and 0xFF)
+            v / 32768f
+        }
+        if (samples.isEmpty()) return null
+        return synchronized(this) {
+            runCatching {
+                val stream = rec.createStream()
+                try {
+                    var i = 0
+                    val chunk = 8000 // 0.5s
+                    while (i < samples.size) {
+                        val n = minOf(chunk, samples.size - i)
+                        stream.acceptWaveform(samples.copyOfRange(i, i + n), 16000)
+                        while (rec.isReady(stream)) rec.decode(stream)
+                        i += n
                     }
-                    entry = zin.nextEntry
+                    stream.inputFinished()
+                    while (rec.isReady(stream)) rec.decode(stream)
+                    cleanUp(rec.getResult(stream).text)
+                } finally {
+                    runCatching { stream.release() }
                 }
-            }
+            }.getOrNull()
         }
-        dirOf(ctx, pack).exists()
-    }.getOrDefault(false)
-
-    /** 解压模型；返回是否至少有一个模型可用。 */
-    fun installIfNeeded(ctx: Context): Boolean {
-        packs.forEach { pack ->
-            if (!dirOf(ctx, pack).exists()) unzip(ctx, pack)
-        }
-        return isReady(ctx)
     }
-
-    private fun modelOf(ctx: Context, pack: Pack): Model? {
-        synchronized(models) {
-            models[pack.dir]?.let { return it }
-        }
-        val created = runCatching { Model(dirOf(ctx, pack).absolutePath) }.getOrNull() ?: return null
-        synchronized(models) { models[pack.dir] = created }
-        return created
-    }
-
-    /** 返回 Pair(文本, 平均置信度) */
-    private fun runModel(model: Model, pcm: ByteArray): Pair<String, Float>? = runCatching {
-        val rec = Recognizer(model, 16000.0f)
-        try {
-            rec.setWords(true)
-            rec.acceptWaveForm(pcm, pcm.size)
-            val json = JSONObject(rec.finalResult)
-            val text = cleanUp(json.optString("text"))
-            val words = json.optJSONArray("result")
-            var conf = 0f
-            if (words != null && words.length() > 0) {
-                for (i in 0 until words.length()) {
-                    conf += words.optJSONObject(i)?.optDouble("conf", 0.0)?.toFloat() ?: 0f
-                }
-                conf /= words.length()
-            } else {
-                conf = if (text.isNotBlank()) 0.3f else -1f
-            }
-            text to conf
-        } finally {
-            runCatching { rec.close() }
-        }
-    }.getOrNull()
 
     /** 常见识别错字 → 正确写法（同音/近音、品牌名、技术词） */
     private val fixes = listOf(
@@ -94,7 +79,6 @@ object LocalAsr {
         "de seek" to "DeepSeek",
         "deep sick" to "DeepSeek",
         "deep seek" to "DeepSeek",
-        "the seek" to "DeepSeek",
         "deepchat" to "DeepChat",
         "deep chat" to "DeepChat",
         "弗莱仕" to "Flex",
@@ -110,51 +94,28 @@ object LocalAsr {
         "陪对" to "配对",
         "配队" to "配对",
         "在现" to "在线",
-        "离线接口" to "离线接口",
-        "马特瑞尔" to "Material",
         "康波斯" to "Compose",
         "酷木" to "Kotlin",
         "靠特林" to "Kotlin",
-        "安卓" to "安卓",
         "艾迪bi" to "ADB",
         "缓存吖" to "缓存",
-        "点几" to "点击",
-        "设值" to "设置"
+        "点几" to "点击"
     )
 
-    /** Vosk 会按词切空格输出中文，这里把汉字之间的空格去掉，只保留英文词之间的空格。 */
+    /** 汉字之间去掉空格；被拆开的单个字母合回；再走一遍错字修正 */
     private fun cleanUp(raw: String): String {
         var t = raw.replace(Regex("\\s+"), " ").trim()
         val han = "\\u4e00-\\u9fff\\u3000-\\u303f\\uff00-\\uffef"
         t = t.replace(Regex("([$han])\\s+"), "$1")
         t = t.replace(Regex("\\s+([$han])"), "$1")
-        // M D、G i t 这种被拆成单个字母的，合并回单词
         repeat(3) {
             t = t.replace(Regex("(?i)\\b([a-z])\\s+([a-z])\\b"), "$1$2")
         }
-        // 错字/同音字修正（英文品牌名忽略大小写）
         fixes.forEach { (wrong, right) ->
             if (wrong != right) {
                 t = t.replace(Regex(Regex.escape(wrong), RegexOption.IGNORE_CASE), right)
             }
         }
         return t.trim()
-    }
-
-    /** pcm：16kHz 单声道 16bit 裸 PCM。 */
-    fun recognize(ctx: Context, pcm: ByteArray): String? {
-        installIfNeeded(ctx)
-        var best: String? = null
-        var bestScore = Float.NEGATIVE_INFINITY
-        for (pack in packs) {
-            if (!dirOf(ctx, pack).exists()) continue
-            val model = modelOf(ctx, pack) ?: continue
-            val (text, score) = runModel(model, pcm) ?: continue
-            if (text.isNotBlank() && score > bestScore) {
-                bestScore = score
-                best = text
-            }
-        }
-        return best
     }
 }

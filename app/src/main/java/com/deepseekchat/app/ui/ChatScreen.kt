@@ -265,7 +265,8 @@ fun ChatScreen(vm: ChatViewModel) {
                 )
             } else {
                 if (vm.asrMode.value != "online") {
-                    scope.launch(Dispatchers.IO) { runCatching { LocalAsr.installIfNeeded(context) } }
+                    // 边录边把引擎加载起来，说完就不用等
+                    scope.launch(Dispatchers.IO) { runCatching { LocalAsr.isReady(context) } }
                 }
                 val file = File(context.cacheDir, "voice_" + System.currentTimeMillis() + ".pcm")
                 val out = file.outputStream()
@@ -390,9 +391,19 @@ fun ChatScreen(vm: ChatViewModel) {
         if (listState.isScrollInProgress) selState.visible = false
     }
 
+    var rootPos by remember { mutableStateOf(androidx.compose.ui.geometry.Offset.Zero) }
+    var rootSize by remember { mutableStateOf(androidx.compose.ui.unit.IntSize.Zero) }
+    var barSize by remember { mutableStateOf(androidx.compose.ui.unit.IntSize.Zero) }
+    val dpi = androidx.compose.ui.platform.LocalDensity.current
+    val selGapPx = with(dpi) { 10.dp.roundToPx() }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .onGloballyPositioned {
+                rootPos = it.positionInWindow()
+                rootSize = it.size
+            }
     ) {
         CompositionLocalProvider(LocalTextToolbar provides selToolbar) {
         Column(
@@ -562,7 +573,23 @@ fun ChatScreen(vm: ChatViewModel) {
             )
         }
 
-        Md3SelectionToolbar(state = selState, language = language)
+        if (selState.visible) {
+            val rect = selState.rect
+            val bw = barSize.width
+            val bh = barSize.height
+            val x = (rect.center.x - rootPos.x - bw / 2f).toInt()
+                .coerceIn(0, (rootSize.width - bw).coerceAtLeast(0))
+            var y = (rect.top - rootPos.y - bh - selGapPx).toInt()
+            if (y < 0) y = (rect.bottom - rootPos.y + selGapPx).toInt()
+            y = y.coerceIn(0, (rootSize.height - bh).coerceAtLeast(0))
+            Md3SelectionBar(
+                state = selState,
+                language = language,
+                modifier = Modifier
+                    .offset { androidx.compose.ui.unit.IntOffset(x, y) }
+                    .onSizeChanged { barSize = it }
+            )
+        }
     }
 
     if (showAttachSheet) {
