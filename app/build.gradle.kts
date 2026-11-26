@@ -12,8 +12,8 @@ android {
         applicationId = "com.deepseekchat.app"
         minSdk = 26
         targetSdk = 34
-        versionCode = 39
-        versionName = "1.3.7"
+        versionCode = 40
+        versionName = "1.3.7.1"
 
         // 只留两种 ARM ABI，砍掉 x86 省体积
         ndk {

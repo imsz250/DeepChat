@@ -10,7 +10,7 @@
 
 ### 下载
 
-最新版：**[DeepChat 1.3.7 APK](https://github.com/imsz250/DeepChat/releases/latest)**
+最新版：**[DeepChat 1.3.7.1 APK](https://github.com/imsz250/DeepChat/releases/latest)**
 
 历史版本见 [Releases](https://github.com/imsz250/DeepChat/releases)。release 包使用 debug 签名，同一签名可直接覆盖升级。
 
@@ -18,8 +18,9 @@
 
 | 版本 | 状态 |
 |---|---|
-| **v1.3.7** | **稳定版（Stable）**，推荐使用 |
-| v1.3.6.1 | Beta，被 1.3.7 取代（补回了「回到最新」箭头） |
+| **v1.3.7.1** | **稳定版（Stable）**，推荐使用 |
+| v1.3.7 | Beta，被 1.3.7.1 取代（修思考过程不自动跟随） |
+| v1.3.6.1 | Beta，补回了「回到最新」箭头 |
 | v1.3.6 | Beta，打底版本 |
 | v1.0.3 – v1.3.5 | Beta 测试版，仅供历史留档，不要拿来当正式版用 |
 
@@ -27,7 +28,7 @@
 
 ### 功能
 
-- 流式对话，边生成边跟随滚动；思考过程可折叠
+- 流式对话，边生成边跟随滚动（思考过程流式增长时也跟随）；思考过程可折叠
 - 多模型切换（deepseek-flash / deepseek-v4-pro / deepseek-chat / deepseek-reasoner），每个对话单独记录花费
 - Markdown 渲染：加粗、斜体、内联代码、标题、列表、引用、分割线、表格、代码块
 - 代码块：HTML / CSS / JS / SVG 可在本机 WebView 直接运行；其他语言只提供语法高亮查看、保存、复制
@@ -69,7 +70,7 @@ A native Android third-party client for DeepSeek, built with Kotlin + Jetpack Co
 
 ### Download
 
-Latest: **[DeepChat 1.3.7 APK](https://github.com/imsz250/DeepChat/releases/latest)**
+Latest: **[DeepChat 1.3.7.1 APK](https://github.com/imsz250/DeepChat/releases/latest)**
 
 Older builds: [Releases](https://github.com/imsz250/DeepChat/releases). Release builds are signed with the debug key, so they upgrade over each other directly.
 
@@ -77,8 +78,9 @@ Older builds: [Releases](https://github.com/imsz250/DeepChat/releases). Release 
 
 | Version | Status |
 |---|---|
-| **v1.3.7** | **Stable**, recommended |
-| v1.3.6.1 | Beta, superseded by 1.3.7 (restored the scroll-to-latest arrow) |
+| **v1.3.7.1** | **Stable**, recommended |
+| v1.3.7 | Beta, superseded by 1.3.7.1 (fixes auto-follow while reasoning) |
+| v1.3.6.1 | Beta, restored the scroll-to-latest arrow |
 | v1.3.6 | Beta, baseline build |
 | v1.0.3 – v1.3.5 | Beta, kept for history only — do not treat them as production builds |
 
@@ -86,7 +88,7 @@ The older ones were built through a lot of trial and error (selection toolbar, v
 
 ### Features
 
-- Streaming chat with auto-follow scrolling; collapsible reasoning traces
+- Streaming chat with auto-follow scrolling (also follows while the reasoning trace streams in); collapsible reasoning traces
 - Model switching (deepseek-flash / deepseek-v4-pro / deepseek-chat / deepseek-reasoner) with per-conversation cost tracking
 - Markdown rendering: bold, italic, inline code, headings, lists, quotes, rules, tables, code blocks
 - Code blocks: HTML / CSS / JS / SVG run in a local WebView; every other language gets syntax-highlight view, save and copy only

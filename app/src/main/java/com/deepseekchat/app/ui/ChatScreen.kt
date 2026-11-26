@@ -350,7 +350,14 @@ fun ChatScreen(vm: ChatViewModel) {
 
     // 边写边跟；只要是自己发了新消息，强制回到最新并继续跟随
     var lastUserId by remember { mutableStateOf<Long?>(null) }
-    LaunchedEffect(chat.messages.size, chat.messages.lastOrNull()?.content?.length) {
+    // 注意：思考过程的字数也要算进 key，否则开着深度思考时只会跟 content，
+    // 思考阶段内容涨了不滚，看起来就像“不自动跟随”
+    val lastBar = chat.messages.lastOrNull()
+    LaunchedEffect(
+        chat.messages.size,
+        lastBar?.content?.length,
+        lastBar?.reasoning?.length
+    ) {
         val newestUser = chat.messages.lastOrNull { it.role == "user" }?.id
         if (newestUser != null && newestUser != lastUserId) {
             lastUserId = newestUser
